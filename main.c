@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
   gtk_container_add (GTK_CONTAINER(window), GTK_WIDGET(web_view));
 
   // Load a default page
-  webkit_web_view_load_uri(web_view, "http://stackoverflow.com/");
+  webkit_web_view_load_uri(web_view, "http://localhost:5004/");
 
   // Show it and continue running until the window closes
   gtk_widget_grab_focus(GTK_WIDGET(web_view));
