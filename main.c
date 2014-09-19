@@ -11,7 +11,6 @@
 
 static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer user_data);
 static gboolean draw(GtkWidget *widget, cairo_t *new_cr, gpointer user_data);
-static void clicked(GtkWindow *win, GdkEventButton *event, gpointer user_data);
 
 int main(int argc, char **argv)
 {
@@ -20,7 +19,7 @@ int main(int argc, char **argv)
     GtkWidget *window = gtk_window_new(GTK_WINDOW_POPUP);
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
     gtk_window_set_default_size(GTK_WINDOW(window), 1366, 767);
-    gtk_window_set_title(GTK_WINDOW(window), "Alpha Demo");
+    gtk_window_set_title(GTK_WINDOW(window), "hudkit overlay window");
     g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
 
     gtk_widget_set_app_paintable(window, TRUE);
@@ -34,18 +33,15 @@ int main(int argc, char **argv)
 
     webkit_web_view_load_uri(web_view, "http://localhost:5004");
 
-    gtk_window_set_decorated(GTK_WINDOW(window), TRUE);
-    gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK);
-    g_signal_connect(G_OBJECT(window), "button-press-event", G_CALLBACK(clicked), NULL);
-
     screen_changed(window, NULL, NULL);
 
     gtk_widget_show_all(window);
 
-
+    // Set input shape (area where clicks are recognised) to nothing. This
+    // means all clicks will pass "through" the window onto whatever's below,
+    // so this window is just an overlay.
     GdkWindow *gdk_window = gtk_widget_get_window(GTK_WIDGET(window));
     gdk_window_input_shape_combine_region(GDK_WINDOW(gdk_window), cairo_region_create(), 0,0);
-
 
     gtk_main();
 
@@ -61,13 +57,13 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer us
 
     if (!visual)
     {
-        printf("Your screen does not support alpha channels!\n");
+        printf("Your screen does not support alpha channels! (That's bad.)\n");
         visual = gdk_screen_get_system_visual(screen);
         supports_alpha = FALSE;
     }
     else
     {
-        printf("Your screen supports alpha channels!\n");
+        printf("Your screen supports alpha channels! (That's good.)\n");
         supports_alpha = TRUE;
     }
 
@@ -95,10 +91,3 @@ static gboolean draw(GtkWidget *widget, cairo_t *cr, gpointer userdata)
 
     return FALSE;
 }
-
-static void clicked(GtkWindow *win, GdkEventButton *event, gpointer user_data)
-{
-    /* toggle window manager frames */
-    gtk_window_set_decorated(win, !gtk_window_get_decorated(win));
-} 
-
