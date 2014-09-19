@@ -25,7 +25,6 @@ Pass a running web server's URI as argument.\n");
     // Window setup
     GtkWidget *window = gtk_window_new(GTK_WINDOW_POPUP);
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
-    gtk_window_set_default_size(GTK_WINDOW(window), 1366, 767);
     gtk_window_set_title(GTK_WINDOW(window), "hudkit overlay window");
     g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
     gtk_widget_set_app_paintable(window, TRUE);
@@ -69,6 +68,10 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer us
     // OK, let's use the RGBA visual on the widget then.
     gtk_widget_set_visual(widget, gdk_screen_get_rgba_visual(screen));
 
+    // Inherit window size from screen
+    gint w = gdk_screen_get_width(screen);
+    gint h = gdk_screen_get_height(screen);
+    gtk_window_set_default_size(GTK_WINDOW(widget), w, h);
 }
 
 static gboolean draw(GtkWidget *widget, cairo_t *cr, gpointer userdata) {
