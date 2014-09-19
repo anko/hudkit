@@ -1,1 +1,1 @@
-clang main.c -o program `pkg-config --cflags --libs gtk+-2.0 webkit-1.0`
+clang test.c -o program `pkg-config --cflags --libs gtk+-3.0 webkitgtk-3.0`
