@@ -15,6 +15,11 @@ static gboolean draw(GtkWidget *widget, cairo_t *new_cr, gpointer user_data);
 
 int main(int argc, char **argv)
 {
+    if (argc < 2) {
+        printf("No argument found.\n\
+Pass a running web server's URI as argument.\n");
+        exit(1);
+    }
     gtk_init(&argc, &argv);
 
     GtkWidget *window = gtk_window_new(GTK_WINDOW_POPUP);
@@ -32,7 +37,8 @@ int main(int argc, char **argv)
     webkit_web_view_set_transparent(web_view, TRUE);
     gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(web_view));
 
-    webkit_web_view_load_uri(web_view, "http://localhost:5004");
+    // Load specified URI
+    webkit_web_view_load_uri(web_view, argv[1]);
 
     screen_changed(window, NULL, NULL);
 
@@ -62,7 +68,7 @@ Your screen does not support alpha channels!\n\
 --------------------------------------------\n\
 Check that your compositor is running.\n\
 -> Quitting.\n");
-        exit(1);
+        exit(2);
 
     } else {
         printf("Your screen supports alpha channels! (Good.)\n");
