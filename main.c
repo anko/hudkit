@@ -56,18 +56,19 @@ Pass a running web server's URI as argument.\n");
 }
 
 static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer userdata) {
-    /* Get the visual to check if the display supports alpha channels */
+    // Check the display's alpha channel support
     GdkScreen *screen = gtk_widget_get_screen(widget);
-    GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
-
-    if (visual) printf("Your screen supports alpha channels! (Good.)\n");
-    else {
+    if (gdk_screen_is_composited(screen)) {
+        printf("Your screen supports alpha channels! (Good.)\n");
+    } else {
         printf("Your screen does not support alpha channels!\n");
         printf("Check your compositor is running.\n");
         exit(2);
     }
 
-    gtk_widget_set_visual(widget, visual);
+    // OK, let's use the RGBA visual on the widget then.
+    gtk_widget_set_visual(widget, gdk_screen_get_rgba_visual(screen));
+
 }
 
 static gboolean draw(GtkWidget *widget, cairo_t *cr, gpointer userdata) {
