@@ -8,6 +8,7 @@
 
 #include <gtk/gtk.h>
 #include <webkit/webkit.h>
+#include <stdlib.h> /* for exit */
 
 static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer user_data);
 static gboolean draw(GtkWidget *widget, cairo_t *new_cr, gpointer user_data);
@@ -48,23 +49,23 @@ int main(int argc, char **argv)
     return 0;
 }
 
-gboolean supports_alpha = FALSE;
 static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer userdata)
 {
     /* To check if the display supports alpha channels, get the visual */
     GdkScreen *screen = gtk_widget_get_screen(widget);
     GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
 
-    if (!visual)
-    {
-        printf("Your screen does not support alpha channels! (That's bad.)\n");
-        visual = gdk_screen_get_system_visual(screen);
-        supports_alpha = FALSE;
-    }
-    else
-    {
-        printf("Your screen supports alpha channels! (That's good.)\n");
-        supports_alpha = TRUE;
+    if (!visual) {
+
+        printf("\
+Your screen does not support alpha channels!\n\
+--------------------------------------------\n\
+Check that your compositor is running.\n\
+-> Quitting.\n");
+        exit(1);
+
+    } else {
+        printf("Your screen supports alpha channels! (Good.)\n");
     }
 
     gtk_widget_set_visual(widget, visual);
@@ -74,14 +75,7 @@ static gboolean draw(GtkWidget *widget, cairo_t *cr, gpointer userdata)
 {
    cairo_t *new_cr = gdk_cairo_create(gtk_widget_get_window(widget));
 
-    if (supports_alpha)
-    {
-        cairo_set_source_rgba (new_cr, 0.5, 1.0, 0.50, 0); /* transparent */
-    }
-    else
-    {
-        cairo_set_source_rgb (new_cr, 1.0, 1.0, 1.0); /* opaque white */
-    }
+    cairo_set_source_rgba (new_cr, 0.5, 1.0, 0.50, 0); /* transparent */
 
     /* draw the background */
     cairo_set_operator (new_cr, CAIRO_OPERATOR_SOURCE);
