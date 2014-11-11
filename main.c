@@ -15,15 +15,16 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
 static gboolean draw (GtkWidget *widget, cairo_t *new_cr, gpointer user_data);
 
 int main(int argc, char **argv) {
+    gtk_init(&argc, &argv);
     if (argc < 2) {
         printf("No argument found.\n\
 Pass a running web server's URI as argument.\n");
         exit(1);
     }
-    gtk_init(&argc, &argv);
 
     // Window setup
-    GtkWidget *window = gtk_window_new(GTK_WINDOW_POPUP);
+
+    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
     gtk_window_set_title(GTK_WINDOW(window), "hudkit overlay window");
     g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
@@ -43,6 +44,14 @@ Pass a running web server's URI as argument.\n");
     // Initialise
     screen_changed(window, NULL, NULL);
     gtk_widget_show_all(window);
+    // "Can't touch this!": Set all the WM hints we possibly can to try to
+    // convince whatever that's reading them to leave this window alone.
+    gtk_window_set_accept_focus(GTK_WINDOW(window), false);
+    gtk_window_set_decorated(GTK_WINDOW(window), false);
+    gtk_window_set_keep_above(GTK_WINDOW(window), true);
+    gtk_window_set_accept_focus(GTK_WINDOW(window), false);
+    gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), true);
+    gtk_window_fullscreen(GTK_WINDOW(window));
 
     // Set input shape (area where clicks are recognised) to nothing. This
     // means all clicks will pass "through" the window onto whatever's below,
