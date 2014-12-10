@@ -17,7 +17,7 @@ static gboolean draw (GtkWidget *widget, cairo_t *new_cr, gpointer user_data);
 int main(int argc, char **argv) {
     gtk_init(&argc, &argv);
     if (argc < 2) {
-        printf("No argument found.\n\
+        fprintf(stderr, "No argument found.\n\
 Pass a running web server's URI as argument.\n");
         exit(1);
     }
@@ -67,8 +67,8 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer us
     // Check the display's alpha channel support
     GdkScreen *screen = gtk_widget_get_screen(widget);
     if (!gdk_screen_is_composited(screen)) {
-        printf("Your screen does not support alpha channels!\n");
-        printf("Check your compositor is running.\n");
+        fprintf(stderr, "Your screen does not support alpha channels!\n");
+        fprintf(stderr, "Check your compositor is running.\n");
         exit(2);
     }
 
