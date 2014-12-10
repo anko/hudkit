@@ -66,9 +66,7 @@ Pass a running web server's URI as argument.\n");
 static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer userdata) {
     // Check the display's alpha channel support
     GdkScreen *screen = gtk_widget_get_screen(widget);
-    if (gdk_screen_is_composited(screen)) {
-        printf("Your screen supports alpha channels! (Good.)\n");
-    } else {
+    if (!gdk_screen_is_composited(screen)) {
         printf("Your screen does not support alpha channels!\n");
         printf("Check your compositor is running.\n");
         exit(2);
