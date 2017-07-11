@@ -1,20 +1,31 @@
 <html><!-- Let's not bother with proper DOCTYPE declarations -->
 <head>
+    <meta charset="utf-8" />
     <style>
-    body { background : rgba(0,0,255,0.5); } /* Translucent background */
-    p    { color : lightblue; }
+    body { background : rgba(0,0,255,0.4); opacity: 0.9 } /* Translucent background */
+    p,li { color : white; }
     span { background : rgba(0,0,0,0.6); } /* Translucent black for contrast */
-    div#container { width : 20%; }
+    small { background : rgba(100,0,0,0.6); } /* Translucent red for contrast */
+    div#container { width : 25%; }
     </style>
 </head>
 
 <body>
     <div id="container">
-    <p><span>If you can see your desktop through a <strong>translucent
-            blue</strong>, then...</span></p>
-    <p><span style="font-size:x-large;">It's working!</span></p>
-    <p><span>Note how you can click through it (and this text) as if it weren't
-        here, to whatever is below.</span></p>
+    <p><span>Check that you—
+        <ul>
+            <li><span>can <strong>see your desktop</strong> through a
+                    <strong>translucent blue</strong>,</span></li>
+            <li><span>can click on other windows <strong>through this
+                        window</strong>, and</span></li>
+            <li><span><strong>can't move</strong> the blue window.</span></li>
+        </ul>
+    <p><span>If those are all true, then...</span></p>
+    <p><span style="font-size:2em;">It's working!</span></p>
+    <p><small><strong>If not</strong>, create an issue at
+        <em>https://github.com/anko/hudkit/issues</em>.  Say which of the above
+        checks failed.  If you know, also mention your distro, WM and
+        compositor!</small></p>
     <div>
 </body>
 </html>
