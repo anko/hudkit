@@ -32,6 +32,10 @@ If you build on another distro, tell me how it went!  If it failed, [raise an is
 
  - **Single-display**. At the moment, hudkit derives the size of its overlay window from the size of the first graphics display it encounters.  So it really doesn't work very well for multiple displays.  If you've got ideas, tell me.  (Connecting more displays shouldn't confuse it: it'll just stick to the one it saw first.)
 
+## License
+
+[ISC](https://en.wikipedia.org/wiki/ISC_license).
+
 
 [anko]: https://github.com/anko
 [arch]: https://www.archlinux.org/
