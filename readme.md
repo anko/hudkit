@@ -2,7 +2,7 @@
 
 A web-based [Head-Up Display][wiki-hud] for your desktop, using the [WebKit][webkit] browser engine.
 
-That's right, Hudkit lets you use HTML, CSS and JavaScript to draw and animate whatever you like on a click-through transparent fullscreen layer over your desktop.  You know, like on a military plane!  Except in JavaScript!
+Hudkit lets you use web technologies (HTML, CSS, JavaScript, WebSockets, etc.) to draw and animate anything on a click-through transparent fullscreen layer over your desktop.  You know, like military planes have!  Except on your monitor!  As a chromeless web browser!
 
 ## Use it
 
@@ -12,13 +12,9 @@ That's right, Hudkit lets you use HTML, CSS and JavaScript to draw and animate w
  2. Run `hudkit http://localhost:8000`
  3. Enjoy the eye candy! :rainbow:
 
-For a quick test script and illustration of the principle, check [`example/`](example/).
+See [`example/`](example/) for a quick test script and starting point.
 
 Make sure your windowing environment has compositing enabled!  If you're running a plain window manager, a standalone compositor like [compton][compton] should do it.
-
-## Why did I make this
-
-I wanted a statusbar that was fun, flexible, programmable with [D3](http://d3js.org/), and which would destroy the competition like hydrogen bombing a house of cards if ever I posted it in a desktop thread.
 
 ## Install
 
