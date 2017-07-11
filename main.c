@@ -46,29 +46,44 @@ Pass a running web server's URI as argument.\n");
     // Load the specified URI
     webkit_web_view_load_uri(web_view, argv[1]);
 
-    // Initialise the window and make it active
+    // Initialise the window and make it active.  We need this so it can
+    // fullscreen to the correct size.
     screen_changed(window, NULL, NULL);
     gtk_widget_show_all(window);
+    gtk_window_fullscreen(GTK_WINDOW(window));
+
+    // Hide the window, so we can get our properties ready without the window
+    // manager trying to mess with us.
+    GdkWindow *gdk_window = gtk_widget_get_window(GTK_WIDGET(window));
+    gdk_window_hide(GDK_WINDOW(gdk_window));
 
     // "Can't touch this!" - to the window manager
     //
-    // Light up all the WM hints we possibly can to try to convince whatever
-    // that's reading them (probably a window manager) to keep this window
-    // on-top and fullscreen but otherwise leave it alone.
-    gtk_window_fullscreen(GTK_WINDOW(window));
+    // The override-redirect flag prevents the window manager taking control of
+    // anything, so the window remains in our control.  This should be enough
+    // on its own.
+    gdk_window_set_override_redirect(GDK_WINDOW(gdk_window), true);
+    // But just to be careful, light up the flags like a Christmas tree, with
+    // all the WM hints we can think of to try to convince whatever that's
+    // reading them (probably a window manager) to keep this window on-top and
+    // fullscreen but otherwise leave it alone.
     gtk_window_set_keep_above       (GTK_WINDOW(window), true);
     gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), true);
     gtk_window_set_accept_focus     (GTK_WINDOW(window), false);
     gtk_window_set_decorated        (GTK_WINDOW(window), false);
     gtk_window_set_accept_focus     (GTK_WINDOW(window), false);
+    gtk_window_set_resizable        (GTK_WINDOW(window), false);
 
     // "Can't touch this!" - to the user
     //
     // Set the input shape (area where clicks are recognised) to a zero-width,
     // zero-height region a.k.a. nothing.  This makes clicks pass through the
     // window onto whatever's below.
-    GdkWindow *gdk_window = gtk_widget_get_window(GTK_WIDGET(window));
     gdk_window_input_shape_combine_region(GDK_WINDOW(gdk_window), cairo_region_create(), 0,0);
+
+    // Now it's safe to show the window again.  It should be click-through, and
+    // the WM should ignore it.
+    gdk_window_show(GDK_WINDOW(gdk_window));
 
     gtk_main();
     return 0;
