@@ -1,38 +1,45 @@
 # Hudkit
 
-A web-based [Head-Up Display][1] for your desktop, using the [WebKit][2] browser engine.
+A web-based [Head-Up Display][wiki-hud] for your desktop, using the [WebKit][webkit] browser engine.
 
-## What?
+That's right, Hudkit lets you use HTML, CSS and JavaScript to draw and animate whatever you like on a click-through transparent fullscreen layer over your desktop.  You know, like on a military plane!  Except in JavaScript!
 
-Yes.
+## Use it
 
-Hudkit lets you use HTML, CSS and JavaScript to draw and animate whatever you like on a click-through transparent fullscreen layer over your desktop.  You know, like on a military plane!  Except in JavaScript!  Basically just put some fun stuff on a local web server and treat hudkit like a web browser, except, well… transparent, fullscreen and click-through.
+ 1. Start a web server, with Python or Node.js or whatever you like.  Serve up
+    an HTML page with a transparent background.  Let's say the server is at
+    `localhost:8000`.
+ 2. Run `hudkit http://localhost:8000`
+ 3. Enjoy the eye candy! :rainbow:
 
-I made this because I wanted to have the world's awesomest statusbar: partially transparent, floating over everything else and rendered in SVG with [D3][3] because it's beautiful and quick to iterate on.  And because I wanted to see what would happen.
+For a quick test script and illustration of the principle, check [`example/`](example/).
 
-It should be usable for all sorts of other experiments too.
+Make sure your windowing environment has compositing enabled!  If you're running a plain window manager, a standalone compositor like [compton][compton] should do it.
 
-## Installing
+## Why did I make this
 
-Just run `make`.  You'll need `gtk3` and a corresponding `webkitgtk`.  (At least that's what the packages are called on [Arch][4].)
+I wanted a statusbar that was fun, flexible, programmable with [D3](http://d3js.org/), and which would destroy the competition like hydrogen bombing a house of cards if ever I posted it in a desktop thread.
 
-If you're building this on some other distro, I'd like to hear how it went, regardless of the outcome!  If it exploded, raise an issue.  If it worked, consider submitting a PR to this `README` with what packages you needed.
+## Install
 
-## Running
+    make
 
-Serve the stuff you want on it from a web server of some kind (`python -m http.server` is nice), then run `hudkit http://whateverrr` for an appropriate value of `whateverrr` (such as `localhost:8000`).  See `examples/` for a dead simple commented base to test with.
+### Dependencies
 
-You'll probably want to serve a page with a transparent background.
+You'll need *GTK 3*, and a corresponding *webkitgtk*.
 
-Make sure your windowing environment has compositing enabled.  If you're running a plain window manager, a standalone compositor like [compton][5] should do it.
+On [Arch][arch], the packages are called `gtk3` and `webkitgtk`.
+
+If you build on another distro, tell me how it went!  If it failed, [raise an issue][new-issue].  If it worked, submit a PR to this `README` with the packages you needed, or just email [me][anko] if you don't have a Github.
 
 ## Limitations
 
-At the moment, hudkit derives the size of its overlay window from the size of the first graphics display it encounters.  So it really doesn't work very well for multiple displays.  I really would like it to, so if you've got ideas, tell me.  Connecting new displays shouldn't confuse it; it'll just keep covering the one display it found first.
+ - **Single-display**. At the moment, hudkit derives the size of its overlay window from the size of the first graphics display it encounters.  So it really doesn't work very well for multiple displays.  If you've got ideas, tell me.  (Connecting more displays shouldn't confuse it: it'll just stick to the one it saw first.)
 
 
-[1]: http://en.wikipedia.org/wiki/Head-up_display
-[2]: https://www.webkit.org/
-[3]: http://d3js.org/
-[4]: https://www.archlinux.org/
-[5]: https://github.com/chjj/compton
+[anko]: https://github.com/anko
+[arch]: https://www.archlinux.org/
+[compton]: https://github.com/chjj/compton
+[webkit]: https://www.webkit.org/
+[wiki-hud]: http://en.wikipedia.org/wiki/Head-up_display
+[new-issue]: https://github.com/anko/hudkit/issues/new
