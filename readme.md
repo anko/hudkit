@@ -30,7 +30,7 @@ You'll need *GTK 3*, and a corresponding *webkitgtk*.
 
 On [Arch][arch], the packages are called `gtk3` and `webkitgtk`.
 
-If you build on another distro, tell me how it went!  If it failed, [raise an issue][new-issue].  If it worked, submit a PR to this `README` with the packages you needed, or just email [me][anko] if you don't have a Github.
+If you build on another distro, tell me how it went!  If it failed, [raise an issue][new-issue].  If it worked, submit a PR to this readme with the packages you needed, or just email [me][anko] if you don't have a Github.
 
 ## Limitations
 
