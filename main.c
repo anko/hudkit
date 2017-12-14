@@ -15,7 +15,6 @@
 
 static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
         gpointer user_data);
-static gboolean draw (GtkWidget *widget, cairo_t *new_cr, gpointer user_data);
 
 int main(int argc, char **argv) {
     gtk_init(&argc, &argv);
@@ -32,10 +31,7 @@ Pass a running web server's URI as argument.\n");
     g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
     gtk_widget_set_app_paintable(window, TRUE);
 
-    // Set up callbacks
-    // ... for when we need to render the window
-    g_signal_connect(G_OBJECT(window), "draw", G_CALLBACK(draw), NULL);
-    // ... and for when something about the screen changes
+    // Set up callback for when something about the screen changes
     g_signal_connect(G_OBJECT(window), "screen-changed", G_CALLBACK(screen_changed), NULL);
 
     // Set up and add the WebKit web view widget
@@ -115,22 +111,4 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer us
     gint w = geometry.width;
     gint h = geometry.height;
     gtk_window_set_default_size(GTK_WINDOW(widget), w, h);
-}
-
-// This runs whenever we need to re-render the contents of the window (We want
-// to just keep it transparent; the web view handles the actual contents.)
-static gboolean draw(GtkWidget *widget, cairo_t *cr, gpointer userdata) {
-
-    // Paint a transparent background
-    cairo_t *new_cr = gdk_cairo_create(gtk_widget_get_window(widget));
-
-        cairo_set_source_rgba(new_cr, 1, 1, 1, 0); // transparency
-
-        // Draw background
-        cairo_set_operator(new_cr, CAIRO_OPERATOR_SOURCE);
-        cairo_paint(new_cr);
-
-    cairo_destroy(new_cr);
-
-    return FALSE;
 }
