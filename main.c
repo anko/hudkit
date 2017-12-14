@@ -21,8 +21,10 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
 int main(int argc, char **argv) {
     gtk_init(&argc, &argv);
     if (argc < 2) {
-        fprintf(stderr, "No argument found.\n\
-Pass a running web server's URI as argument.\n");
+        fprintf(stderr, "Expected 1 argument, got 0:\n");
+        fprintf(stderr, "You should pass a running web server's URI.\n\n");
+        fprintf(stderr, "For example, start a server on port 4000, then\n\n");
+        fprintf(stderr, "    %s \"http://localhost:4000\"\n\n", argv[0]);
         exit(1);
     }
 
@@ -98,8 +100,8 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
     // Die unless the screen supports compositing (alpha blending)
     GdkScreen *screen = gtk_widget_get_screen(widget);
     if (!gdk_screen_is_composited(screen)) {
-        fprintf(stderr, "Your screen does not support alpha channels!\n");
-        fprintf(stderr, "Check your compositor is running.\n");
+        fprintf(stderr, "Your screen does not support transparency.\n");
+        fprintf(stderr, "Maybe your compositor isn't running?\n");
         exit(2);
     }
 
