@@ -106,9 +106,14 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer us
     // Make sure the widget (the window, actually) can take RGBA
     gtk_widget_set_visual(widget, gdk_screen_get_rgba_visual(screen));
 
+    GdkDisplay *display = gdk_display_get_default();
+    GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
+    GdkRectangle geometry;
+    gdk_monitor_get_geometry(monitor, &geometry);
+
     // Inherit window size from screen
-    gint w = gdk_screen_get_width(screen);
-    gint h = gdk_screen_get_height(screen);
+    gint w = geometry.width;
+    gint h = geometry.height;
     gtk_window_set_default_size(GTK_WINDOW(widget), w, h);
 }
 
