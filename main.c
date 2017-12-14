@@ -7,11 +7,11 @@
  * Extended with WebKit and input shape kill by Anko<an@cyan.io>, June 18, 2014.
  */
 
-// Library include          // What it's used for
-// -------------------------//-------------------
-#include <gtk/gtk.h>        // windowing
-#include <webkit/webkit.h>  // web view
-#include <stdlib.h>         // exit
+// Library include           // What it's used for
+// --------------------------//-------------------
+#include <gtk/gtk.h>         // windowing
+#include <webkit2/webkit2.h> // web view
+#include <stdlib.h>          // exit
 
 static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
         gpointer user_data);
@@ -40,7 +40,9 @@ Pass a running web server's URI as argument.\n");
 
     // Set up and add the WebKit web view widget
     WebKitWebView *web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
-    webkit_web_view_set_transparent(web_view, TRUE); // This exists, wow.
+    GdkRGBA rgba = { .alpha = 0.0 };
+    webkit_web_view_set_background_color(web_view, &rgba);
+
     gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(web_view));
 
     // Load the specified URI

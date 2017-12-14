@@ -22,9 +22,9 @@ Make sure your windowing environment has compositing enabled!  If you're running
 
 ### Dependencies
 
-You'll need *GTK 3*, and a corresponding *webkitgtk*.
+You'll need *GTK 3*, and a corresponding *webkit2gtk*.
 
-On [Arch][arch], the packages are called `gtk3` and `webkitgtk`.
+On [Arch][arch], the packages are called `gtk3` and `webkit2gtk`.
 
 If you build on another distro, tell me how it went!  If it failed, [raise an issue][new-issue].  If it worked, submit a PR to this readme with the packages you needed, or just email [me][anko] if you don't have a Github.
 
