@@ -1,10 +1,12 @@
-/**
- * Original transparent window code by Mike - http://plan99.net/~mike/blog (now
- *     a dead link. I can't find a copy.)
- * Modified by karlphillip for StackExchange -
- *     http://stackoverflow.com/questions/3908565/how-to-make-gtk-window-background-transparent
- * Re-worked for Gtk 3 by Louis Melahn, L.C., January 30, 2014.
- * Extended with WebKit and input shape kill by Anko<an@cyan.io>, June 18, 2014.
+/*
+   * Original transparent window code by Mike - http://plan99.net/~mike/blog
+     (now a dead link. I can't find a copy.)
+   * Modified by karlphillip for StackExchange -
+     http://stackoverflow.com/questions/3908565/how-to-make-gtk-window-background-transparent
+   * Re-worked for Gtk 3 by Louis Melahn, L.C., January 30, 2014.
+   * Extended with WebKit and input shape kill by Antti Korpi <an@cyan.io>, on
+     June 18, 2014.
+   * Updated to WebKit 2 by Antti Korpi <an@cyan.io> on December 12, 2017.
  */
 
 // Library include           // What it's used for
@@ -31,14 +33,14 @@ Pass a running web server's URI as argument.\n");
     g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
     gtk_widget_set_app_paintable(window, TRUE);
 
-    // Set up callback for when something about the screen changes
-    g_signal_connect(G_OBJECT(window), "screen-changed", G_CALLBACK(screen_changed), NULL);
+    // Set up a callback to react to screen changes
+    g_signal_connect(G_OBJECT(window), "screen-changed",
+            G_CALLBACK(screen_changed), NULL);
 
     // Set up and add the WebKit web view widget
     WebKitWebView *web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
-    GdkRGBA rgba = { .alpha = 0.0 };
+    GdkRGBA rgba = { .alpha = 0.0 }; // Fully transparent
     webkit_web_view_set_background_color(web_view, &rgba);
-
     gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(web_view));
 
     // Load the specified URI
@@ -77,7 +79,8 @@ Pass a running web server's URI as argument.\n");
     // Set the input shape (area where clicks are recognised) to a zero-width,
     // zero-height region a.k.a. nothing.  This makes clicks pass through the
     // window onto whatever's below.
-    gdk_window_input_shape_combine_region(GDK_WINDOW(gdk_window), cairo_region_create(), 0,0);
+    gdk_window_input_shape_combine_region(GDK_WINDOW(gdk_window),
+            cairo_region_create(), 0,0);
 
     // Now it's safe to show the window again.  It should be click-through, and
     // the WM should ignore it.
@@ -89,7 +92,8 @@ Pass a running web server's URI as argument.\n");
 
 // This callback runs when the window is first set to appear on some screen, or
 // when it's moved to appear on another.
-static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer userdata) {
+static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
+        gpointer userdata) {
 
     // Die unless the screen supports compositing (alpha blending)
     GdkScreen *screen = gtk_widget_get_screen(widget);
@@ -99,16 +103,13 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer us
         exit(2);
     }
 
-    // Make sure the widget (the window, actually) can take RGBA
+    // Ensure the widget (the window, actually) can take RGBA
     gtk_widget_set_visual(widget, gdk_screen_get_rgba_visual(screen));
 
+    // Inherit window size from screen
     GdkDisplay *display = gdk_display_get_default();
     GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
-    GdkRectangle geometry;
-    gdk_monitor_get_geometry(monitor, &geometry);
-
-    // Inherit window size from screen
-    gint w = geometry.width;
-    gint h = geometry.height;
-    gtk_window_set_default_size(GTK_WINDOW(widget), w, h);
+    GdkRectangle rect;
+    gdk_monitor_get_geometry(monitor, &rect);
+    gtk_window_set_default_size(GTK_WINDOW(widget), rect.width, rect.height);
 }
