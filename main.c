@@ -40,8 +40,12 @@ int main(int argc, char **argv) {
             G_CALLBACK(screen_changed), NULL);
 
     // Set up and add the WebKit web view widget
-    WebKitWebView *web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
-    GdkRGBA rgba = { .alpha = 0.0 }; // Fully transparent
+    // Disable caching
+    WebKitWebContext *wk_context = webkit_web_context_get_default();
+    webkit_web_context_set_cache_model(wk_context, WEBKIT_CACHE_MODEL_DOCUMENT_VIEWER);
+    WebKitWebView *web_view = WEBKIT_WEB_VIEW(webkit_web_view_new_with_context(wk_context));
+    // Make transparent
+    GdkRGBA rgba = { .alpha = 0.0 };
     webkit_web_view_set_background_color(web_view, &rgba);
     gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(web_view));
 
