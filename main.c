@@ -44,6 +44,10 @@ int main(int argc, char **argv) {
     WebKitWebContext *wk_context = webkit_web_context_get_default();
     webkit_web_context_set_cache_model(wk_context, WEBKIT_CACHE_MODEL_DOCUMENT_VIEWER);
     WebKitWebView *web_view = WEBKIT_WEB_VIEW(webkit_web_view_new_with_context(wk_context));
+    // Enable browser console logging to stdout
+    WebKitSettings *wk_settings = webkit_settings_new();
+    webkit_settings_set_enable_write_console_messages_to_stdout(wk_settings, true);
+    webkit_web_view_set_settings(web_view, wk_settings);
     // Make transparent
     GdkRGBA rgba = { .alpha = 0.0 };
     webkit_web_view_set_background_color(web_view, &rgba);
