@@ -96,6 +96,27 @@ int main(int argc, char **argv) {
     // the WM should ignore it.
     gdk_window_show(GDK_WINDOW(gdk_window));
 
+    // XXX KLUDGE WARNING! XXX
+    //
+    // This sleep is necessary at least on my system with a proprietary Nvidia
+    // driver.  Without this sleep, the transparent overlay window will usually
+    // randomly not show.  No errors from it or the compositor, or anything;
+    // there's no discernible reason why it doesn't work.  Except sometimes it
+    // does, rarely, like once every 30 tries, with again no other difference
+    // from what I can tell.  It's clearly a race condition of some sort.
+    //
+    // If I `watch xwininfo -tree -root`, I see the Hudkit window and
+    // WebKitWebProcess windows get created, but I don't understand GTK
+    // internals well enough to understand if it's right.  The same windows are
+    // created both when successful and when not.
+    //
+    // Things I tried that didn't help:
+    //  - adding calls to XSync all over the place,
+    //  - doing `gdk_x11_grab_server` and `gdk_x11_ungrab_server` around
+    //    various large and small bits of code, and
+    //  - forcing full composition pipeline in `nvidia-settings`.
+    usleep(200000);
+
     gtk_main();
     return 0;
 }
