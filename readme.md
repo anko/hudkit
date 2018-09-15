@@ -2,9 +2,24 @@
 
 A web-based [Head-Up Display][wiki-hud] for your desktop, using the [WebKit][webkit] browser engine.
 
-Hudkit lets you use web technologies (HTML, CSS, JavaScript, WebSockets, etc.) to draw and animate anything on a click-through transparent fullscreen layer over your desktop.  You know, like military planes have!  Except on your monitor!  As a chromeless web browser!
+Hudkit lets you use web technologies (HTML, CSS, JavaScript, WebSockets, etc.) to draw and animate anything on a *click-through transparent fullscreen layer over your desktop*.  You know, like military planes have!  Except on your monitor(s)!  As a chromeless web browser!
 
-## Use it
+## Fastest way to check if this works
+
+```
+cd /tmp
+git clone https://github.com/anko/hudkit.git
+cd hudkit
+make
+cd example
+./run.sh
+```
+
+Install the [dependencies](#dependencies) if `make` complains.
+
+## General usage
+
+Ensure your windowing environment has compositing enabled!  If you're running a plain window manager, a standalone compositor like [compton][compton] running should be enough.
 
  1. Start a web server, with Python or Node.js or whatever you like.  Serve up
     an HTML page with a transparent background.  Let's say the server is at
@@ -14,7 +29,15 @@ Hudkit lets you use web technologies (HTML, CSS, JavaScript, WebSockets, etc.) t
 
 See [`example/`](example/) for a quick test script and starting point.
 
-Make sure your windowing environment has compositing enabled!  If you're running a plain window manager, a standalone compositor like [compton][compton] should do it.
+### JavaScript API
+
+The JavaScript on the page context has an object `Hudkit` preloaded.  `Hudkit.monitors` is an array with each of your monitors represented by a `{x,y,width,height}`-object.  You can use this to position statusbars or notification messages.
+
+DOM APIs like SVG work as you'd expect.
+
+WebSockets work normally too.  You can use them to send live data from your system to the overlay.  If you're writing your server in Node.js, maybe use [SockJS](sockjs) or something.  Some ideas for what to send that might be fun: keystrokes captured by [xkbcat](xkbcat), name of the currently playing music track, recently received chat messages, `pstree`, system logs, more JavaScript code that you then run through `eval`, …
+
+WebGL doesn't work.  You're still welcome to try.
 
 ## Install
 
@@ -30,7 +53,8 @@ If you build on another distro, tell me how it went!  If it failed, [raise an is
 
 ## Limitations
 
- - **Single-display**. At the moment, hudkit derives the size of its overlay window from the size of the first graphics display it encounters.  So it really doesn't work very well for multiple displays.  If you've got ideas, tell me.  (Connecting more displays shouldn't confuse it: it'll just stick to the one it saw first.)
+ - **Requires a restart if rearranging monitors**.  Hudkit can handle multi-monitor setups: it detects their arrangement on startup, not dynamically.
+ - **It's only WebKit**.  Consequently, you probably can't use WebGL, WebAudio, WebVR, or any other brand new web API.
 
 ## License
 
@@ -40,6 +64,8 @@ If you build on another distro, tell me how it went!  If it failed, [raise an is
 [anko]: https://github.com/anko
 [arch]: https://www.archlinux.org/
 [compton]: https://github.com/chjj/compton
+[new-issue]: https://github.com/anko/hudkit/issues/new
+[sockjs]: https://github.com/sockjs/sockjs-client
 [webkit]: https://www.webkit.org/
 [wiki-hud]: http://en.wikipedia.org/wiki/Head-up_display
-[new-issue]: https://github.com/anko/hudkit/issues/new
+[xkbcat]: https://github.com/anko/xkbcat
