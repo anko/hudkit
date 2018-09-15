@@ -18,6 +18,17 @@
 static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
         gpointer user_data);
 
+static int get_monitor_rects(GdkDisplay *display, GdkRectangle **rectangles) {
+    int n = gdk_display_get_n_monitors(display);
+    GdkRectangle *new_rectangles = (GdkRectangle*)malloc(n * sizeof(GdkRectangle));
+    for (int i = 0; i < n; ++i) {
+        GdkMonitor *monitor = gdk_display_get_monitor(display, i);
+        gdk_monitor_get_geometry(monitor, &new_rectangles[i]);
+    }
+    *rectangles = new_rectangles;
+    return n;
+}
+
 int main(int argc, char **argv) {
     gtk_init(&argc, &argv);
     if (argc < 2) {
@@ -60,7 +71,6 @@ int main(int argc, char **argv) {
     // fullscreen to the correct size.
     screen_changed(window, NULL, NULL);
     gtk_widget_show_all(window);
-    gtk_window_fullscreen(GTK_WINDOW(window));
 
     // Hide the window, so we can get our properties ready without the window
     // manager trying to mess with us.
@@ -121,6 +131,42 @@ int main(int argc, char **argv) {
     return 0;
 }
 
+static void size_to_screen(GtkWindow *window) {
+    GdkScreen *screen = gtk_widget_get_screen(GTK_WIDGET(window));
+
+    // Get total screen size.  This involves finding all physical monitors
+    // connected, and examining their positions and sizes.  This is as complex
+    // as it is because monitors can be configured to have relative
+    // positioning, causing overlapping areas and a non-rectangular total
+    // desktop area.
+    //
+    // We want our window to cover the minimum axis-aligned bounding box of
+    // that total desktop area.  This means it's too large (even large bits of
+    // it may be outside the accessible desktop) but it's easier to manage than
+    // multiple windows.
+
+    // TODO Find the min x and y too, just in case someone's weird setup
+    // has something other than 0,0 as top-left.
+
+    GdkDisplay *display = gdk_display_get_default();
+    GdkRectangle *rectangles = NULL;
+    int nRectangles = get_monitor_rects(display, &rectangles);
+
+    int width = 0, height = 0;
+    for (int i = 0; i < nRectangles; ++i) {
+        GdkRectangle rect = rectangles[i];
+        int actualWidth = rect.x + rect.width;
+        int actualHeight = rect.y + rect.height;
+        if (width < actualWidth) width = actualWidth;
+        if (height < actualHeight) height = actualHeight;
+    }
+    free(rectangles);
+
+    gtk_window_set_default_size(window, width, height);
+    gtk_window_resize(window, width, height);
+    gtk_window_set_resizable(window, false);
+}
+
 // This callback runs when the window is first set to appear on some screen, or
 // when it's moved to appear on another.
 static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
@@ -137,10 +183,5 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
     // Ensure the widget (the window, actually) can take RGBA
     gtk_widget_set_visual(widget, gdk_screen_get_rgba_visual(screen));
 
-    // Inherit window size from screen
-    GdkDisplay *display = gdk_display_get_default();
-    GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
-    GdkRectangle rect;
-    gdk_monitor_get_geometry(monitor, &rect);
-    gtk_window_set_default_size(GTK_WINDOW(widget), rect.width, rect.height);
+    size_to_screen(GTK_WINDOW(widget));
 }
