@@ -14,6 +14,7 @@
 #include <gtk/gtk.h>         // windowing
 #include <webkit2/webkit2.h> // web view
 #include <stdlib.h>          // exit
+#include <stdio.h>           // files
 
 static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
         gpointer user_data);
@@ -27,6 +28,22 @@ static int get_monitor_rects(GdkDisplay *display, GdkRectangle **rectangles) {
     }
     *rectangles = new_rectangles;
     return n;
+}
+
+static void web_view_javascript_finished(GObject *object, GAsyncResult *result,
+        gpointer user_data) {
+    WebKitJavascriptResult *js_result;
+    JSValueRef value;
+    JSGlobalContextRef context;
+    GError *error = NULL;
+
+    js_result = webkit_web_view_run_javascript_finish(WEBKIT_WEB_VIEW(object), result, &error);
+    if (!js_result) {
+        g_warning("Error running JavaScript: %s", error->message);
+        g_error_free(error);
+        return;
+    }
+    webkit_javascript_result_unref(js_result);
 }
 
 int main(int argc, char **argv) {
@@ -70,6 +87,35 @@ int main(int argc, char **argv) {
     // Initialise the window and make it active.  We need this so it can
     // fullscreen to the correct size.
     screen_changed(window, NULL, NULL);
+
+    GdkDisplay *display = gdk_display_get_default();
+    GdkRectangle *rectangles = NULL;
+    int nRectangles = get_monitor_rects(display, &rectangles);
+
+    // snprintf-ing and then strncat-ing strings safely in C is hard, and it's
+    // 3am, so let's write to a temporary file and read the result back.
+    char filename[] = "/tmp/hudkit_js_init_XXXXXX";
+    int fd = mkstemp(filename);
+    FILE *fp = fdopen(fd, "w+");
+    if (fp == NULL) {
+        fprintf(stderr, "Error opening temp file\n");
+        exit(1);
+    }
+    fprintf(fp, "window.Hudkit = {monitors:[");
+    for (int i = 0; i < nRectangles; ++i) {
+        GdkRectangle rect = rectangles[i];
+        fprintf(fp, "{x:%i,y:%i,width:%i,height:%i},\n", rect.x, rect.y, rect.width, rect.height);
+    }
+    fprintf(fp, "]};");
+    fseek(fp, 0, SEEK_SET);
+
+    char buffer[1000];
+    int nRead = fread(buffer, 1, 1000, fp);
+    buffer[nRead] = '\0';
+    fclose(fp);
+
+    webkit_web_view_run_javascript(web_view, buffer, NULL, web_view_javascript_finished, NULL);
+
     gtk_widget_show_all(window);
 
     // Hide the window, so we can get our properties ready without the window
