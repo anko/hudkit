@@ -2,30 +2,93 @@
 <head>
     <meta charset="utf-8" />
     <style>
-    body { background : rgba(0,0,255,0.4); opacity: 0.9 } /* Translucent background */
-    p,li { color : white; }
-    span { background : rgba(0,0,0,0.6); } /* Translucent black for contrast */
-    small { background : rgba(100,0,0,0.6); } /* Translucent red for contrast */
-    div#container { width : 25%; }
+    body { background : rgba(0,0,255,0.3) } /* Translucent background */
+    h1,p,li { color : white; }
+    span { background : rgba(0,0,0,0.8); } /* Translucent black for contrast */
+    span.ifnot { background : rgba(100,0,0,0.8); } /* Translucent red for contrast */
+    div#container { position : absolute; width : 25%; }
     </style>
 </head>
 
 <body>
     <div id="container">
+    <h1><span>Welcome to the future!</span></h1>
     <p><span>Check that you—
         <ul>
             <li><span>can <strong>see your desktop</strong> through a
                     <strong>translucent blue</strong>,</span></li>
             <li><span>can click on other windows <strong>through this
-                        window</strong>, and</span></li>
-            <li><span><strong>can't move</strong> the blue window.</span></li>
+                        window</strong>,</span></li>
+            <li><span><strong>can't move</strong> this window, and</span></li>
+            <li><span>can see each of your monitors <strong>indicated with a
+                        pulsing red border</strong> and a number at the
+                    top.</span></li>
         </ul>
-    <p><span>If those are all true, then...</span></p>
-    <p><span style="font-size:2em;">It's working!</span></p>
-    <p><small><strong>If not</strong>, create an issue at
-        <em>https://github.com/anko/hudkit/issues</em>.  Say which of the above
-        checks failed.  If you know, also mention your distro, WM and
-        compositor!</small></p>
-    <div>
+    <p><span class='ifnot'><strong>If something looks broken</strong>, create
+        an issue at <em>https://github.com/anko/hudkit/issues</em>.  Say which
+        of the above checks failed.  Mention your distro, WM and
+        compositor!</span></p>
+    </div>
+    <script>
+
+        // Shim the Hudkit object if it doesn't exist.  This lets us open this
+        // in a normal web browser and use devtools for debugging.
+        if (window.Hudkit === undefined) {
+            window.Hudkit = {monitors: [
+                {x:0, y:0, width: 1280, height: 1024}
+            ]};
+        }
+
+        console.log(JSON.stringify(Hudkit));
+
+        var container = document.getElementById('container')
+        container.style.left = Hudkit.monitors[0].x + 30
+        container.style.top = Hudkit.monitors[0].y + 30
+        container.style.width = Hudkit.monitors[0].width * 0.5
+
+        var body = document.getElementsByTagName('body')[0]
+        Hudkit.monitors.forEach((m, i) => {
+
+            var div = document.createElement('div')
+            div.style.position = 'absolute'
+            div.style.left = m.x
+            div.style.top = m.y
+            div.style.width = m.width - 20
+            div.style.height = m.height - 20
+            div.style.border = '10px solid red';
+            div.style['transition-property'] = 'border-width, width, height'
+            div.style['transition-duration'] = '0.6s'
+            div.style['transition-timing-function'] = 'ease'
+
+            body.appendChild(div)
+
+            var labelDiv = document.createElement('div')
+            labelDiv.style.margin = '0 auto';
+            labelDiv.style.width = '50%';
+            var label = document.createElement('h1')
+            label.appendChild(document.createTextNode(i))
+            label.style['font-size'] = '100pt';
+            label.style.color = 'red';
+            label.style['text-align'] = 'center';
+            labelDiv.appendChild(label)
+            div.appendChild(labelDiv)
+
+            var small = false
+            setInterval(() => {
+                if (small) {
+                    div.style['border-width'] = 10
+                    div.style.width = m.width - 20
+                    div.style.height = m.height - 20
+                    small = false
+                } else {
+                    div.style['border-width'] = 1
+                    div.style.width = m.width - 2
+                    div.style.height = m.height - 2
+                    small = true
+                }
+            }, 1000)
+        })
+
+    </script>
 </body>
 </html>
