@@ -35,7 +35,17 @@ The JavaScript on the page context has an object `Hudkit` preloaded.  `Hudkit.mo
 
 DOM APIs like SVG work as you'd expect.
 
-WebSockets work normally too.  You can use them to send live data from your system to the overlay.  If you're writing your server in Node.js, maybe use [SockJS](sockjs) or something.  Some ideas for what to send that might be fun: keystrokes captured by [xkbcat](xkbcat), name of the currently playing music track, recently received chat messages, `pstree`, system logs, more JavaScript code that you then run through `eval`, …
+WebSockets work normally too.  You can use them to send live data from your system to the overlay.  If you're writing your server in Node.js, maybe use [dnode][dnode] to remote-procedure-call the Node.js API from page context, or just [SockJS][sockjs] if just a stream is enough, or both.
+
+Ideas for what to send it that might be fun:
+
+ - keystrokes captured by [xkbcat][xkbcat],
+ - [Twitch][twitch] chat ![Kappa](https://static-cdn.jtvnw.net/emoticons/v1/25/1.0),
+ - name of the currently playing music track,
+ - recently received chat messages,
+ - `pstree` (port [pscircle][pscircle] to JS with a [D3.js tree layout][d3_tree_example]?),
+ - `sensors` for hardware temperatures and fan data,
+ - more JavaScript code to `eval`.
 
 WebGL doesn't work.  You're still welcome to try.
 
@@ -74,10 +84,14 @@ If you build on another distro, tell me how it went!  If it failed, [raise an is
 [anko]: https://github.com/anko
 [arch]: https://www.archlinux.org/
 [compton]: https://github.com/chjj/compton
+[d3_tree_example]: https://bl.ocks.org/mbostock/4063550
+[dnode]: https://github.com/substack/dnode
 [electron]: https://electronjs.org/
 [electron_ignoremouse]: https://electronjs.org/docs/api/browser-window#winsetignoremouseeventsignore-options
 [new-issue]: https://github.com/anko/hudkit/issues/new
+[pscircle]: https://gitlab.com/mildlyparallel/pscircle
 [sockjs]: https://github.com/sockjs/sockjs-client
+[twitch]: https://www.twitch.tv/
 [void]: https://voidlinux.org/
 [webkit]: https://www.webkit.org/
 [wiki-hud]: http://en.wikipedia.org/wiki/Head-up_display
