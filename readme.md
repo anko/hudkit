@@ -60,20 +60,11 @@ If you build on another distro, tell me how it went!  If it failed, [raise an is
 
 ## Alternatives
 
-- [Electron][electron].  I've heard it's possible:  Start it with
-  `--enable-transparent-visuals --disable-gpu`.  Call
-  [`win.setIgnoreMouseEvents`][electron_ignoremouse], set all the possible
-  "please dear WM, do not touch this window"-flags, call the [`screen`
-  API](https://electronjs.org/docs/api/screen) for monitor arrangements and
-  position your window accordingly.  Sacrifice 55 paperclips to Eris of
-  Discordia, and pray it works.
+- [Electron][electron].  I've heard it's possible:  Start it with `--enable-transparent-visuals --disable-gpu`.  Call [`win.setIgnoreMouseEvents`][electron_ignoremouse], set all the possible "please dear WM, do not touch this window"-flags, call the [`screen` API](https://electronjs.org/docs/api/screen) for monitor arrangements and position your window accordingly.  Sacrifice 55 paperclips to Eris of Discordia.
 
-  It didn't work for me.  I just couldn't get a transparent or click-through
-  window out of Electron, but maybe you can.  Let me know if you do.
+  It didn't work for me.  I just couldn't get a transparent or click-through window out of Electron, but maybe you can.  Let me know if you do.
 
-  You'd get a nicer API (Page-context Node.js integration!  Chromium web
-  engine!), though continuing support for your use-case will probably be even
-  more fragile than what Hudkit relies on.
+  You'd get a nicer API (:sparkles:Page-context Node.js integration!  Chromium web engine!:sparkles:), though continuing support for your use-case will probably be even more fragile than what Hudkit relies on.
 
 ## License
 
