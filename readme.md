@@ -49,12 +49,31 @@ You'll need *GTK 3*, and a corresponding *webkit2gtk*.
 
 On [Arch][arch], the packages are called `gtk3` and `webkit2gtk`.
 
+On [Void][void], they are `gtk+3-devel` and `webkit2gtk-devel`.
+
 If you build on another distro, tell me how it went!  If it failed, [raise an issue][new-issue].  If it worked, submit a PR to this readme with the packages you needed, or just email [me][anko] if you don't have a Github.
 
 ## Limitations
 
  - **Requires a restart if rearranging monitors**.  Hudkit can handle multi-monitor setups: it detects their arrangement on startup, not dynamically.
  - **It's only WebKit**.  Consequently, you probably can't use WebGL, WebAudio, WebVR, or any other brand new web API.
+
+## Alternatives
+
+- [Electron][electron].  I've heard it's possible:  Start it with
+  `--enable-transparent-visuals --disable-gpu`.  Call
+  [`win.setIgnoreMouseEvents`][electron_ignoremouse], set all the possible
+  "please dear WM, do not touch this window"-flags, call the [`screen`
+  API](https://electronjs.org/docs/api/screen) for monitor arrangements and
+  position your window accordingly.  Sacrifice 55 paperclips to Eris of
+  Discordia, and pray it works.
+
+  It didn't work for me.  I just couldn't get a transparent or click-through
+  window out of Electron, but maybe you can.  Let me know if you do.
+
+  You'd get a nicer API (Page-context Node.js integration!  Chromium web
+  engine!), though continuing support for your use-case will probably be even
+  more fragile than what Hudkit relies on.
 
 ## License
 
@@ -64,8 +83,11 @@ If you build on another distro, tell me how it went!  If it failed, [raise an is
 [anko]: https://github.com/anko
 [arch]: https://www.archlinux.org/
 [compton]: https://github.com/chjj/compton
+[electron]: https://electronjs.org/
+[electron_ignoremouse]: https://electronjs.org/docs/api/browser-window#winsetignoremouseeventsignore-options
 [new-issue]: https://github.com/anko/hudkit/issues/new
 [sockjs]: https://github.com/sockjs/sockjs-client
+[void]: https://voidlinux.org/
 [webkit]: https://www.webkit.org/
 [wiki-hud]: http://en.wikipedia.org/wiki/Head-up_display
 [xkbcat]: https://github.com/anko/xkbcat
