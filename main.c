@@ -1,6 +1,8 @@
 /*
    * Original transparent window code by Mike - http://plan99.net/~mike/blog
      (now a dead link. I can't find a copy.)
+     * internet archive for his blog https://web.archive.org/web/20080304042227/http://plan99.net:80/~mike/blog/
+     
    * Modified by karlphillip for StackExchange -
      http://stackoverflow.com/questions/3908565/how-to-make-gtk-window-background-transparent
    * Re-worked for Gtk 3 by Louis Melahn, L.C., January 30, 2014.
