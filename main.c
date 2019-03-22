@@ -1,6 +1,7 @@
 /*
    * Original transparent window code by Mike - http://plan99.net/~mike/blog
-     (now a dead link. I can't find a copy.)
+     Dead link, but on Internet Archive most recently at:
+     https://web.archive.org/web/20121127025149/http://mikehearn.wordpress.com/2006/03/26/gtk-windows-with-alpha-channels/
    * Modified by karlphillip for StackExchange -
      http://stackoverflow.com/questions/3908565/how-to-make-gtk-window-background-transparent
    * Re-worked for Gtk 3 by Louis Melahn, L.C., January 30, 2014.
