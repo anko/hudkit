@@ -61,6 +61,8 @@ On [Arch][arch], the packages are called `gtk3` and `webkit2gtk`.
 
 On [Void][void], they are `gtk+3-devel` and `webkit2gtk-devel`.
 
+On [Ubuntu][ubuntu], they are `libgtk-3-dev` and `libwebkit2gtk-4.0-devel`.
+
 If you build on another distro, tell me how it went!  If it failed, [raise an issue][new-issue].  If it worked, submit a PR to this readme with the packages you needed, or just email [me][anko] if you don't have a Github.
 
 ## Limitations
@@ -92,6 +94,7 @@ If you build on another distro, tell me how it went!  If it failed, [raise an is
 [pscircle]: https://gitlab.com/mildlyparallel/pscircle
 [sockjs]: https://github.com/sockjs/sockjs-client
 [twitch]: https://www.twitch.tv/
+[ubuntu]: https://ubuntu.com/
 [void]: https://voidlinux.org/
 [webkit]: https://www.webkit.org/
 [wiki-hud]: http://en.wikipedia.org/wiki/Head-up_display
