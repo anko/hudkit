@@ -11,7 +11,7 @@
 # - convert (from imagemagick)
 #
 echo "Starting Xvfb"
-Xvfb +extension COMPOSITE :99 & xvfb_pid=$!
+Xvfb +extension Composite :99 & xvfb_pid=$!
 sleep 3
 echo '- - -'
 echo
