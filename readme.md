@@ -1,4 +1,4 @@
-# Hudkit
+# Hudkit&ensp;[![](https://img.shields.io/travis/anko/hudkit?style=flat-square)](https://travis-ci.org/anko/hudkit)
 
 A web-based [Head-Up Display][wiki-hud] for your desktop, using the [WebKit][webkit] browser engine.
 
