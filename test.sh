@@ -13,7 +13,9 @@
 #
 export DISPLAY=:99
 echo "Starting Xvfb"
-Xvfb +extension Composite +extension RANDR "$DISPLAY" & xvfb_pid=$!
+# The Xvfb that comes with Ubuntu, has defaults to 8-bit depth, so the
+# -screen spec is necessary for compositing to work correctly...
+Xvfb -screen 0 1280x1024x24 +extension Composite "$DISPLAY" & xvfb_pid=$!
 sleep 3
 echo '- - -'
 echo "Starting compositor"
