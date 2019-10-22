@@ -7,9 +7,6 @@ script:
 addons:
     apt:
         update: true
-        # https://docs.travis-ci.com/user/installing-dependencies#adding-apt-sources
-        sources:
-            - sourceline: 'ppa:webkit-team/ppa'
         packages:
             - libwegkit2gtk-4.0-dev
             - libgtk-3-dev
