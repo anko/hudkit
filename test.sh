@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 #
 # A simple headless automated smoke test to see if the semitransparency of the
 # window works.  Doesn't test for click-through!
