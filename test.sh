@@ -6,20 +6,25 @@
 # Required programs:
 #
 # - Xvfb
-# - metacity
+# - compton
+# - hsetroot
 # - xwd (apt: x11-apps, pacman: xorg-xwd)
 # - convert (from imagemagick)
 #
+export DISPLAY=:99
 echo "Starting Xvfb"
-Xvfb +extension Composite :99 & xvfb_pid=$!
+Xvfb +extension Composite +extension RANDR "$DISPLAY" & xvfb_pid=$!
 sleep 3
 echo '- - -'
-echo
-echo "Starting metacity"
-DISPLAY=:99 metacity & metacity_pid=$!
+echo "Starting compositor"
+compton --config /dev/null & compositor_pid=$!
 sleep 3
 echo '- - -'
-echo
+echo "Setting background to black"
+hsetroot -solid "#000000"
+sleep 0.5
+echo '- - -'
+
 tmpfile="/tmp/hudkit_testfile.html"
 echo '''
 <html>
@@ -33,23 +38,23 @@ body { background: rgba(255,255,255,0.5) }
 echo "Wrote test page to $tmpfile as thus:"
 cat "$tmpfile"
 echo '- - -'
-echo
+
 echo "Starting Hudkit"
-DISPLAY=:99 ./hudkit "file://$tmpfile" & hudkit_pid=$!
+./hudkit "file://$tmpfile" & hudkit_pid=$!
 sleep 3
 echo '- - -'
-echo
+
 echo "Capturing pixel"
-out=$(DISPLAY=:99 xwd -root -silent | convert xwd:- -depth 8 -crop "1x1+0+0" txt:- | grep -om1 '#\w\+')
+out=$(xwd -root -silent | convert xwd:- -depth 8 -crop "1x1+0+0" txt:- | grep -om1 '#\w\+')
 echo "Pixel value at (0,0): $out"
 echo '- - -'
-echo
+
 echo "Killing the background processes"
 kill "$hudkit_pid"
-kill "$metacity_pid"
+kill "$compositor_pid"
 kill "$xvfb_pid"
 echo '- - -'
-echo
+
 echo "Checking value"
 rm "$tmpfile"
 if [ "$out" != "#7F7F7F" ]; then
