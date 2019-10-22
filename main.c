@@ -13,6 +13,8 @@
 // Library include           // What it's used for
 // --------------------------//-------------------
 #include <gtk/gtk.h>         // windowing
+#include <gdk/gdk.h>         // low-level windowing
+#include <gdk/gdkmonitor.h>  // monitor counting
 #include <webkit2/webkit2.h> // web view
 #include <stdlib.h>          // exit
 #include <stdio.h>           // files
