@@ -59,7 +59,7 @@ echo '- - -'
 
 echo "Checking value"
 rm "$tmpfile"
-if [ "$out" != "#7F7F7F" ]; then
+if [ "$out" != "#808080" ]; then
     echo "Pixel didn't match!"
     exit 1;
 else
