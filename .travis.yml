@@ -1,6 +1,5 @@
 dist: bionic
 language: c
-sudo: require
 script:
     - make
     - ./test.sh
