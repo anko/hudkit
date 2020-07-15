@@ -61,7 +61,9 @@ int main(int argc, char **argv) {
 
     // Create the window, set basic properties
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
+    gtk_window_set_gravity(GTK_WINDOW(window), GDK_GRAVITY_NORTH_WEST);
+    gtk_window_move(GTK_WINDOW(window), 0, 0);
+
     gtk_window_set_title(GTK_WINDOW(window), "hudkit overlay window");
     g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
     gtk_widget_set_app_paintable(window, TRUE);
