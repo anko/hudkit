@@ -235,6 +235,10 @@ USAGE: %s <URL> [--help] [--webkit-settings option1=value1,...]\n\
             option_name=0xbeef\n\
         The enum option hardware_acceleration_policy has these valid values\n\
             ON_DEMAND, ALWAYS, NEVER\n\
+\n\
+    All of the standard GTK debug options and env variables are also\n\
+    supported.  You probably won't need them, but you can find a list here:\n\
+    https://developer.gnome.org/gtk3/stable/gtk-running.html\n\
             \n",
         programName);
 }
