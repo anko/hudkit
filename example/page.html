@@ -1,6 +1,7 @@
-<html><!-- Let's not bother with proper DOCTYPE declarations -->
+<html>
 <head>
     <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'">
     <style>
     body { background : rgba(0,0,255,0.3) } /* Translucent background */
     h1,p,li { color : white; }
@@ -31,62 +32,61 @@
     </div>
     <script>
 
-        // Shim the Hudkit object if it doesn't exist.  This lets us open this
-        // in a normal web browser and use devtools for debugging.
-        if (window.Hudkit === undefined) {
-            window.Hudkit = {monitors: [
-                {x:0, y:0, width: 1280, height: 1024}
-            ]};
-        }
+        Hudkit.setClickableAreas([
+            { x: 0, y: 0, width: 100, height: 1200 }
+        ], e => console.log(e))
 
-        console.log(JSON.stringify(Hudkit));
+        //Hudkit.showInspector()
 
-        var container = document.getElementById('container')
-        container.style.left = Hudkit.monitors[0].x + 30
-        container.style.top = Hudkit.monitors[0].y + 30
-        container.style.width = Hudkit.monitors[0].width * 0.5
+        Hudkit.getMonitorLayout((e, monitors) => {
 
-        var body = document.getElementsByTagName('body')[0]
-        Hudkit.monitors.forEach((m, i) => {
+            var container = document.getElementById('container')
+            container.style.left = monitors[0].x + 30
+            container.style.top = monitors[0].y + 30
+            container.style.width = monitors[0].width * 0.5
 
-            var div = document.createElement('div')
-            div.style.position = 'absolute'
-            div.style.left = m.x
-            div.style.top = m.y
-            div.style.width = m.width - 20
-            div.style.height = m.height - 20
-            div.style.border = '10px solid red';
-            div.style['transition-property'] = 'border-width, width, height'
-            div.style['transition-duration'] = '0.6s'
-            div.style['transition-timing-function'] = 'ease'
+            var body = document.getElementsByTagName('body')[0]
+            monitors.forEach((m, i) => {
 
-            body.appendChild(div)
+                var div = document.createElement('div')
+                div.style.position = 'absolute'
+                div.style.left = m.x
+                div.style.top = m.y
+                div.style.width = m.width - 20
+                div.style.height = m.height - 20
+                div.style.border = '10px solid red';
+                div.style['transition-property'] = 'border-width, width, height'
+                div.style['transition-duration'] = '0.6s'
+                div.style['transition-timing-function'] = 'ease'
 
-            var labelDiv = document.createElement('div')
-            labelDiv.style.margin = '0 auto';
-            labelDiv.style.width = '50%';
-            var label = document.createElement('h1')
-            label.appendChild(document.createTextNode(i))
-            label.style['font-size'] = '100pt';
-            label.style.color = 'red';
-            label.style['text-align'] = 'center';
-            labelDiv.appendChild(label)
-            div.appendChild(labelDiv)
+                body.appendChild(div)
 
-            var small = false
-            setInterval(() => {
-                if (small) {
-                    div.style['border-width'] = 10
-                    div.style.width = m.width - 20
-                    div.style.height = m.height - 20
-                    small = false
-                } else {
-                    div.style['border-width'] = 1
-                    div.style.width = m.width - 2
-                    div.style.height = m.height - 2
-                    small = true
-                }
-            }, 1000)
+                var labelDiv = document.createElement('div')
+                labelDiv.style.margin = '0 auto';
+                labelDiv.style.width = '50%';
+                var label = document.createElement('h1')
+                label.appendChild(document.createTextNode(i))
+                label.style['font-size'] = '100pt';
+                label.style.color = 'red';
+                label.style['text-align'] = 'center';
+                labelDiv.appendChild(label)
+                div.appendChild(labelDiv)
+
+                var small = false
+                setInterval(() => {
+                    if (small) {
+                        div.style['border-width'] = 10
+                        div.style.width = m.width - 20
+                        div.style.height = m.height - 20
+                        small = false
+                    } else {
+                        div.style['border-width'] = 1
+                        div.style.width = m.width - 2
+                        div.style.height = m.height - 2
+                        small = true
+                    }
+                }, 1000)
+            })
         })
 
     </script>
