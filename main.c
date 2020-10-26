@@ -67,6 +67,12 @@ static void on_callback_finished(GObject *object, GAsyncResult *result,
 }
 
 void call_js_callback(WebKitWebView *web_view, int callbackId, char *stringifiedData) {
+    // Calls the user JS callback with the given ID, simply up string-placing
+    // the stringified data between its call parentheses.
+    //
+    // Ensure `stringifiedData` is sanitised!  It will basically be `eval`ed in
+    // the web page's context.
+
     char buffer[sizeof(stringifiedData) + 1024];
     snprintf(buffer, sizeof(buffer), "window.Hudkit._pendingCallbacks[%i](%s);\n\
             delete window.Hudkit._pendingCallbacks[%i]",
@@ -82,6 +88,9 @@ void on_js_call_get_monitor_layout(WebKitUserContentManager *manager,
     WebKitWebView *web_view = WEBKIT_WEB_VIEW(arg);
     JSCValue *jsValue = webkit_javascript_result_get_js_value(sentData);
     int callbackId = jsc_value_to_int32(jsValue);
+
+    // TODO also include display names.  Just make damn sure to properly
+    // JS-string-escape their names.
 
     // TODO get display from web_view?  Just in case it has somehow changed
     // between then and now.
@@ -239,7 +248,7 @@ USAGE: %s <URL> [--help] [--webkit-settings option1=value1,...]\n\
     All of the standard GTK debug options and env variables are also\n\
     supported.  You probably won't need them, but you can find a list here:\n\
     https://developer.gnome.org/gtk3/stable/gtk-running.html\n\
-            \n",
+\n",
         programName);
 }
 
