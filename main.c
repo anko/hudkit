@@ -244,8 +244,8 @@ USAGE: %s <URL> [--help] [--webkit-settings option1=value1,...]\n\
 \n\
             http://localhost:4000\n\
 \n\
-    --help\n\
-        Print this help text, then exit.\n\
+    --inspect\n\
+        Open the Web Inspector (dev tools) on start.\n\
 \n\
     --webkit-settings\n\
         Followed by comma-separated setting names to pass to the WebKit web\n\
@@ -267,6 +267,9 @@ USAGE: %s <URL> [--help] [--webkit-settings option1=value1,...]\n\
             option_name=0xbeef\n\
         The enum option hardware_acceleration_policy has these valid values\n\
             ON_DEMAND, ALWAYS, NEVER\n\
+\n\
+    --help\n\
+        Print this help text, then exit.\n\
 \n\
     All of the standard GTK debug options and env variables are also\n\
     supported.  You probably won't need them, but you can find a list here:\n\
@@ -291,10 +294,12 @@ int main(int argc, char **argv) {
     webkit_settings_set_enable_write_console_messages_to_stdout(wk_settings, TRUE);
 
     char *target_url = NULL;
+    bool open_inspector_immediately = FALSE;
 
     for (int i = 1; i < argc; ++i) {
         // Handle flag arguments
         if      (!strcmp(argv[i], "--help")) { printUsage(argv[0]); exit(0); }
+        else if (!strcmp(argv[i], "--inspect")) open_inspector_immediately = TRUE;
         else if (!strcmp(argv[i], "--webkit-settings")) {
             ++i;
             char *comma_separated_entries = argv[i];
@@ -534,9 +539,9 @@ int main(int argc, char **argv) {
     g_signal_connect(inspector, "detach",
             G_CALLBACK(on_inspector_detach), NULL);
 
-    // Set the inspector to attached mode, but don't actually start it yet
-    // (starting in detached mode seems not to work)
-    webkit_web_inspector_attach(WEBKIT_WEB_INSPECTOR(inspector));
+    if (open_inspector_immediately) {
+        webkit_web_inspector_show(WEBKIT_WEB_INSPECTOR(inspector));
+    }
 
     // Make transparent
     GdkRGBA rgba = { .alpha = 0.0 };

@@ -37,25 +37,49 @@ please PR.
 ## Usage
 
 ```
-hudkit [--help] [--webkit-settings <1>,<2>,...] <URL>
+USAGE: ./hudkit <URL> [--help] [--webkit-settings option1=value1,...]
+
+    <URL>
+        Universal Resource Locator to be loaded on the overlay web view.
+        For example, to load a local file, you'd pass something like:
+
+            file:///home/mary/test.html
+
+        or to load from a local web server at port 4000:
+
+            http://localhost:4000
+
+    --inspect
+        Open the Web Inspector (dev tools) on start.
+
+    --webkit-settings
+        Followed by comma-separated setting names to pass to the WebKit web
+        view; for details of what options are available, see the list at
+        https://webkitgtk.org/reference/webkit2gtk/stable/WebKitSettings.html
+        Please format setting names as underscore_separated_words.
+
+        Default settings are the same as WebKit's defaults, plus these two:
+         - enable_write_console_messages_to_stdout
+         - enable_developer_extras
+
+        Boolean options can look like
+            option_name
+            option_name=TRUE
+            option_name=FALSE
+        String and integer options can look like
+            option_name=foo
+            option_name=42
+            option_name=0xbeef
+        The enum option hardware_acceleration_policy has these valid values
+            ON_DEMAND, ALWAYS, NEVER
+
+    --help
+        Print this help text, then exit.
+
+    All of the standard GTK debug options and env variables are also
+    supported.  You probably won't need them, but you can find a list here:
+    https://developer.gnome.org/gtk3/stable/gtk-running.html
 ```
-
- - `<URL>` is whatever link you want the overlay web view to open.  Probably
-   either a `file:///home/you/hud.html`, or if you have a local web server
-   running on port 4000, then `http://localhost:4000` or similar.
-
- - `--webkit-settings` expects the next argument to be a comma-separated list
-   of [valid WebKit settings][wk-settings] to be passed to the web view.  Write
-   the name of the option with underscore-separated words (for example,
-   `auto_load_images`).
-
-   - Boolean options can be set with `option_name=TRUE`, `option_name=FALSE`.
-     Assumed to be `TRUE` if you only type the `option_name`.
-   - String and integer options can be set with `option_name=value`.
-   - The only enum option `hardware_acceleration_policy` has valid values
-     `ON_DEMAND`, `ALWAYS`, and `NEVER`.
-
- - `--help` prints usage help.
 
 ## JavaScript API
 
@@ -65,6 +89,10 @@ JavaScript on the web page context has a `Hudkit` object, with these properties:
 
 Opens the Web Inspector (also known as Developer Tools), for debugging the page
 loaded in the web view.
+
+:information\_source: You can also start the inspector with the `--inspect`
+flag.  It's usually better, because it works even if your JS crashes and burns
+before being able to call this function.
 
 Arguments:
 
