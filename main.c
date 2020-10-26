@@ -207,6 +207,29 @@ bool on_inspector_detach(WebKitWebInspector *inspector, gpointer user_data) {
     return FALSE; // Allow detach
 }
 
+bool on_page_load_failed(WebKitWebView *web_view, WebKitLoadEvent load_event,
+        gchar *failing_uri, GError *error, gpointer user_data) {
+    // Show a custom error page
+    char page_content[2000];
+    snprintf(page_content, sizeof(page_content), "\
+<html>\n\
+<head>\n\
+<style>\n\
+    body { background : rgba(255,0,0,0.2) }\n\
+    h1 { color : white; filter: drop-shadow(0 0 0.75rem black); }\n\
+</style>\n\
+</head>\n\
+<h1>%s<br>%s</h1>\n\
+</html>", error->message, failing_uri);
+    // `failing_uri` is URL-escaped, so it's fine to inject.
+    // TODO URI-escape the error message for maximum paranoia?
+    webkit_web_view_load_alternate_html(
+            web_view, page_content, failing_uri, NULL);
+
+    // Don't call other handlers
+    return FALSE;
+}
+
 void printUsage(char *programName) {
     fprintf(stderr, "\
 USAGE: %s <URL> [--help] [--webkit-settings option1=value1,...]\n\
@@ -493,6 +516,14 @@ int main(int argc, char **argv) {
 
     // Use the webview settings we parsed out of argv earlier
     webkit_web_view_set_settings(web_view, wk_settings);
+
+    // Listen for page load failures, so we can show a custom error page.
+    //
+    // This doesn't fire for HTTP failures; those still get whatever page the
+    // server sends back.  This fires for failures at a level below HTTP, for
+    // when the server can't be found and such.
+    g_signal_connect(web_view, "load-failed",
+            G_CALLBACK(on_page_load_failed), NULL);
 
     // Initialise inspector, and start tracking when it's attached to or
     // detached from the overlay window.
