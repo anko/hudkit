@@ -112,8 +112,9 @@ Arguments:
  - `callback(err, monitors)`: a function called when the request completes:
 
    - `err`: `null` if successful.  Otherwise, an `Error` object.
-   - `monitors`: If successful, contains an Array of `{x, y, width, height}`
-     objects, representing the dimensions of your monitors.
+   - `monitors`: If successful, contains an Array of `{name, x, y, width,
+     height}` objects, representing the device names and dimensions of your
+     monitors.
 
 Return:  `undefined`
 
@@ -123,9 +124,8 @@ Example:
 Hudkit.getMonitorLayout((err, monitors) => {
  if (err) { console.error(err) }
 
- // Show each object
- monitors.forEach((monitor) => {
-   console.log(JSON.stringify(monitor))
+ monitors.forEach((m) => {
+   console.log(`${m.name} pos:${m.x},${m.y} size:${m.width},${m.height}`)
  })
 })
 ```

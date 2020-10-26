@@ -89,21 +89,99 @@ void on_js_call_get_monitor_layout(WebKitUserContentManager *manager,
     JSCValue *jsValue = webkit_javascript_result_get_js_value(sentData);
     int callbackId = jsc_value_to_int32(jsValue);
 
-    // TODO also include display names.  Just make damn sure to properly
-    // JS-string-escape their names.
-
     // TODO get display from web_view?  Just in case it has somehow changed
     // between then and now.
     GdkDisplay *display = gdk_display_get_default();
     GdkRectangle *rectangles = NULL;
     int nRectangles = get_monitor_rects(display, &rectangles);
 
+    GdkMonitor *monitors[nRectangles];
+    for (int i = 0; i < nRectangles; ++i) {
+        monitors[i] = gdk_display_get_monitor(display, i);
+    }
+
     // TODO re-malloc buffer if data doesn't fit.  In case someone in the
     // future using this has a LOT of monitors.
     char buffer[1024] = "null, [";
     for (int i = 0; i < nRectangles; ++i) {
+        // Escape the JS string contents escape, to prevent XSS via monitor
+        // model string.  Yes, seriously.
+        //
+        // The unlikely attack (or more likely, an unlucky coincidence) that is
+        // that a monitor model string could contain a character that
+        // JavaScript string literals treat specially, such as a newline or
+        // closing quote, which would cause a parse error, or in the worst case
+        // execute the rest of the input as JS in the page context.
+        const char *monitor_model_string = gdk_monitor_get_model(monitors[i]);
+        // Uncomment to test sample XSS attack:
+        //monitor_model_string = "evil\', attack: alert('xss'), _:\'";
+
+        int monitor_model_string_length = strlen(monitor_model_string);
+
+        // Worst-case the escaped output twice as long: if we need to escape
+        // every character.  Plus 1 for the terminating \0.
+        char escaped_monitor_model_string[2 * monitor_model_string_length + 1];
+        char *end_pointer = escaped_monitor_model_string;
+
+        for (int index = 0; index < monitor_model_string_length; ++index) {
+            char charHere = monitor_model_string[index];
+            // Spec for JS string literals' parsing grammar:
+            // http://www.ecma-international.org/ecma-262/5.1/#sec-7.8.4
+            //
+            // We have to backslash-escape every character excluded from either
+            // the DoubleStringCharacter or SingleStringCharacter productions.
+            switch (charHere) {
+
+                // Directly named excluded characters:
+                // \ (backslash)
+                case '\\':
+                // ' (single quote)
+                case '\'':
+                // " (double quote)
+                case '"':
+                    // Just put a backslash in front of it
+                    memset(end_pointer++, '\\', 1);
+                    memset(end_pointer++, charHere, 1);
+                    break;
+
+                // Characters excluded because they're part of LineTerminator:
+                // <LF> (line feed)
+                case '\n':
+                    memset(end_pointer++, '\\', 1);
+                    memset(end_pointer++, 'n', 1);
+                    break;
+                // <CR> (carriage return)
+                case '\r':
+                    memset(end_pointer++, '\\', 1);
+                    memset(end_pointer++, 'r', 1);
+                    break;
+                // <LS> (line separator)
+                // <PS> (paragraph separator)
+                //
+                // Those last 2 are Unicode, and not representable in ASCII,
+                // which we're working in, so we don't have to deal with them.
+                //
+                // Just in case, I checked that WebKit really does treat the
+                // script as ASCII, discarding out-of range bit patterns that
+                // would form valid Unicode.  It does this even if the target
+                // document is declared with <meta charset="utf-8">.
+
+                // Anything  else is fine in a JavaScript string literal.  Yes,
+                // this even includes other control characters.
+                default:
+                    memset(end_pointer++, charHere, 1);
+                    break;
+            }
+        }
+        // The buffer was oversized already, and zeroed on allocation, so we
+        // don't have to explicitly write a null byte to terminate it.
+
         GdkRectangle rect = rectangles[i];
-        snprintf(buffer + strlen(buffer), sizeof(buffer), "{x:%i,y:%i,width:%i,height:%i},\n", rect.x, rect.y, rect.width, rect.height);
+        snprintf(
+                buffer + strlen(buffer),
+                sizeof(buffer),
+                "{name:'%s',x:%i,y:%i,width:%i,height:%i},",
+                escaped_monitor_model_string, rect.x, rect.y, rect.width, rect.height);
     }
     snprintf(buffer + strlen(buffer), sizeof(buffer), "]");
 
