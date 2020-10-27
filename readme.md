@@ -86,7 +86,7 @@ USAGE: ./hudkit <URL> [--help] [--webkit-settings option1=value1,...]
 
 JavaScript on the web page context has a `Hudkit` object, with these properties:
 
-### `Hudkit.showInspector(callback)`
+### `Hudkit.showInspector([callback])`
 
 Opens the Web Inspector (also known as Developer Tools), for debugging the page
 loaded in the web view.
@@ -149,7 +149,7 @@ Currently listenable events:
 De-registers the given `listener` from the given `eventName`, so it will no
 longer be called.
 
-### `Hudkit.setClickableAreas(rectangles, callback)`
+### `Hudkit.setClickableAreas(rectangles, [callback])`
 
 Parameters:
 
@@ -161,7 +161,8 @@ Parameters:
    become input-opaque (able to receive mouse events).  All other areas become
    input-transparent.
 
- - `callback(err, monitors)`: a function called when the request completes:
+ - `callback(err, monitors)`: *optional* a function called when the request
+   completes:
 
    - `err`: `null` if successful.  Otherwise, an `Error` object.
 
@@ -190,11 +191,15 @@ Hudkit.setClickableAreas([
    `Hudkit.on('monitors-changed', () => { ... })` to listen to monitor layout
    changes and update your clickable areas accordingly!
 
-### `Hudkit.showInspector(callback)`
+### `Hudkit.showInspector([shouldAttachToWindow], [callback])`
 
 Parameters:
 
- - `callback(err, monitors)`: a function called when the request completes:
+ - `shouldAttachToWindow`: Boolean.  If `true`, starts the inspector attached
+   to the overlay window.  If `false`, start the inspector in its own window.
+   (Default: `false`.)
+
+ - `callback(err)`: a function called when the request completes:
 
    - `err`: `null` if successful.  Otherwise, an `Error` object.
 

@@ -230,12 +230,19 @@ void on_js_call_show_inspector(WebKitUserContentManager *manager,
         gpointer arg) {
     WebKitWebView *web_view = WEBKIT_WEB_VIEW(arg);
     JSCValue *jsValue = webkit_javascript_result_get_js_value(sentData);
-    int callbackId = jsc_value_to_int32(jsValue);
+    int callbackId = jsc_value_to_int32(jsc_value_object_get_property(jsValue, "id"));
+    bool startAttached = jsc_value_to_boolean(
+            jsc_value_object_get_property(jsValue, "shouldAttachToWindow"));
 
     WebKitWebInspector *inspector = webkit_web_view_get_inspector(
             WEBKIT_WEB_VIEW(web_view));
-
+    // For some reason calling this twice makes it start detached, but the
+    // inspector doesn't seem to respond in any way to the actual functions
+    // that are supposed put it in detached or attached mode.  It is a
+    // mysterious creature.
     webkit_web_inspector_show(WEBKIT_WEB_INSPECTOR(inspector));
+    if (!startAttached)
+        webkit_web_inspector_show(WEBKIT_WEB_INSPECTOR(inspector));
 
     call_js_callback(web_view, callbackId, "null");
 }
@@ -736,11 +743,13 @@ window.Hudkit = {\n\
     window.Hudkit._pendingCallbacks[id] = callback\n\
     window.webkit.messageHandlers.setClickableAreas.postMessage({id, rectangles})\n\
   },\n\
-  showInspector: function (callback) {\n\
+  showInspector: function (shouldAttachToWindow, callback) {\n\
+    if (shouldAttachToWindow === undefined) callback = shouldAttachToWindow\n\
     callback = callback || (function () {})\n\
+    shouldAttachToWindow = shouldAttachToWindow ? true : false\n\
     const id = nextCallbackId++\n\
     window.Hudkit._pendingCallbacks[id] = callback\n\
-    window.webkit.messageHandlers.showInspector.postMessage(id)\n\
+    window.webkit.messageHandlers.showInspector.postMessage({id, shouldAttachToWindow})\n\
   },\n\
 }\n\
 Object.defineProperty(window.Hudkit, '_pendingCallbacks', {\n\
