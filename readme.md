@@ -55,9 +55,13 @@ USAGE: ./hudkit <URL> [--help] [--webkit-settings option1=value1,...]
 
     --webkit-settings
         Followed by comma-separated setting names to pass to the WebKit web
-        view; for details of what options are available, see the list at
+        view.  Which settings are available depends on what version of WebKit
+        this program was compiled against.  See a list of ones supported on
+        your system by passing '--webkit-settings help'.
+
+        For details of what the options do, see the list at
         https://webkitgtk.org/reference/webkit2gtk/stable/WebKitSettings.html
-        Please format setting names as underscore_separated_words.
+        Pass setting names as underscore_separated_words.
 
         Default settings are the same as WebKit's defaults, plus these two:
          - enable_write_console_messages_to_stdout

@@ -346,9 +346,13 @@ USAGE: %s <URL> [--help] [--webkit-settings option1=value1,...]\n\
 \n\
     --webkit-settings\n\
         Followed by comma-separated setting names to pass to the WebKit web\n\
-        view; for details of what options are available, see the list at\n\
+        view.  Which settings are available depends on what version of WebKit\n\
+        this program was compiled against.  See a list of ones supported on\n\
+        your system by passing '--webkit-settings help'.\n\
+\n\
+        For details of what the options do, see the list at\n\
         https://webkitgtk.org/reference/webkit2gtk/stable/WebKitSettings.html\n\
-        Please format setting names as underscore_separated_words.\n\
+        Pass setting names as underscore_separated_words.\n\
 \n\
         Default settings are the same as WebKit's defaults, plus these two:\n\
          - enable_write_console_messages_to_stdout\n\
@@ -434,6 +438,10 @@ int main(int argc, char **argv) {
                 char *key = strtok(entry, "=");
                 char *value = strtok(NULL, "=");
 
+                // If we get the special key "help", we should only print the
+                // available options, and exit.
+                bool help_mode = !strcmp(key, "help");
+
                 // Unfortunately, no function exists to set a WebKit setting
                 // generically, by its string name.  Instead, there is a
                 // separate setter function for each setting name.
@@ -441,7 +449,8 @@ int main(int argc, char **argv) {
                 // So we'll generate them using macros.
 
                 #define BOOLEAN_SETTING(SETTING_NAME) \
-                if (!strcmp(key, #SETTING_NAME)) {\
+                if (help_mode) printf(#SETTING_NAME "\n");\
+                else if (!strcmp(key, #SETTING_NAME)) {\
                     bool actual_value = TRUE;\
                     if (value == NULL) actual_value = TRUE;\
                     else if (!strcmp(value, "TRUE")) actual_value = TRUE;\
@@ -458,18 +467,30 @@ int main(int argc, char **argv) {
                 }
 
                 BOOLEAN_SETTING(enable_developer_extras);
+#if WEBKIT_MINOR_VERSION >= 10
                 BOOLEAN_SETTING(allow_file_access_from_file_urls);
+#endif
                 BOOLEAN_SETTING(allow_modal_dialogs);
+#if WEBKIT_MINOR_VERSION >= 28
                 BOOLEAN_SETTING(allow_top_navigation_to_data_urls);
+#endif
+#if WEBKIT_MINOR_VERSION >= 14
                 BOOLEAN_SETTING(allow_universal_access_from_file_urls);
+#endif
                 BOOLEAN_SETTING(auto_load_images);
                 BOOLEAN_SETTING(draw_compositing_indicators);
+#if WEBKIT_MINOR_VERSION >= 2
                 BOOLEAN_SETTING(enable_accelerated_2d_canvas);
+#endif
+#if WEBKIT_MINOR_VERSION >= 24
                 BOOLEAN_SETTING(enable_back_forward_navigation_gestures);
+#endif
                 BOOLEAN_SETTING(enable_caret_browsing);
                 BOOLEAN_SETTING(enable_developer_extras);
                 BOOLEAN_SETTING(enable_dns_prefetching);
+#if WEBKIT_MINOR_VERSION >= 20
                 BOOLEAN_SETTING(enable_encrypted_media);
+#endif
                 BOOLEAN_SETTING(enable_frame_flattening);
                 BOOLEAN_SETTING(enable_fullscreen);
                 BOOLEAN_SETTING(enable_html5_database);
@@ -477,12 +498,22 @@ int main(int argc, char **argv) {
                 BOOLEAN_SETTING(enable_hyperlink_auditing);
                 BOOLEAN_SETTING(enable_java);
                 BOOLEAN_SETTING(enable_javascript);
+#if WEBKIT_MINOR_VERSION >= 24
                 BOOLEAN_SETTING(enable_javascript_markup);
+#endif
+#if WEBKIT_MINOR_VERSION >= 26
                 BOOLEAN_SETTING(enable_media);
+#endif
+#if WEBKIT_MINOR_VERSION >= 22
                 BOOLEAN_SETTING(enable_media_capabilities);
+#endif
+#if WEBKIT_MINOR_VERSION >= 4
                 BOOLEAN_SETTING(enable_media_stream);
                 BOOLEAN_SETTING(enable_mediasource);
+#endif
+#if WEBKIT_MINOR_VERSION >= 24
                 BOOLEAN_SETTING(enable_mock_capture_devices);
+#endif
                 BOOLEAN_SETTING(enable_offline_web_application_cache);
                 BOOLEAN_SETTING(enable_page_cache);
                 BOOLEAN_SETTING(enable_plugins);
@@ -491,11 +522,15 @@ int main(int argc, char **argv) {
                 BOOLEAN_SETTING(enable_resizable_text_areas);
                 BOOLEAN_SETTING(enable_site_specific_quirks);
                 BOOLEAN_SETTING(enable_smooth_scrolling);
+#if WEBKIT_MINOR_VERSION >= 4
                 BOOLEAN_SETTING(enable_spatial_navigation);
+#endif
                 BOOLEAN_SETTING(enable_tabs_to_links);
                 BOOLEAN_SETTING(enable_webaudio);
                 BOOLEAN_SETTING(enable_webgl);
+#if WEBKIT_MINOR_VERSION >= 2
                 BOOLEAN_SETTING(enable_write_console_messages_to_stdout);
+#endif
                 BOOLEAN_SETTING(enable_xss_auditor);
                 BOOLEAN_SETTING(javascript_can_access_clipboard);
                 BOOLEAN_SETTING(javascript_can_open_windows_automatically);
@@ -506,7 +541,8 @@ int main(int argc, char **argv) {
                 BOOLEAN_SETTING(zoom_text_only);
 
                 #define STRING_SETTING(SETTING_NAME) \
-                if (!strcmp(key, #SETTING_NAME)) {\
+                if (help_mode) printf(#SETTING_NAME "\n");\
+                else if (!strcmp(key, #SETTING_NAME)) {\
                     webkit_settings_set_ ## SETTING_NAME (\
                             wk_settings, value);\
                     continue;\
@@ -516,7 +552,9 @@ int main(int argc, char **argv) {
                 STRING_SETTING(default_charset);
                 STRING_SETTING(default_font_family);
                 STRING_SETTING(fantasy_font_family);
+#if WEBKIT_MINOR_VERSION >= 30
                 STRING_SETTING(media_content_types_requiring_hardware_support);
+#endif
                 STRING_SETTING(monospace_font_family);
                 STRING_SETTING(pictograph_font_family);
                 STRING_SETTING(sans_serif_font_family);
@@ -525,7 +563,8 @@ int main(int argc, char **argv) {
 
                 // TODO exit(3) when can't parse int, instead of continuing
                 #define INT_SETTING(SETTING_NAME) \
-                if (!strcmp(key, #SETTING_NAME)) {\
+                if (help_mode) printf(#SETTING_NAME "\n");\
+                else if (!strcmp(key, #SETTING_NAME)) {\
                     int actual_value = strtoimax(value, NULL, 10);\
                     webkit_settings_set_ ## SETTING_NAME (\
                             wk_settings, actual_value);\
@@ -536,9 +575,12 @@ int main(int argc, char **argv) {
                 INT_SETTING(default_monospace_font_size);
                 INT_SETTING(minimum_font_size);
 
+#if WEBKIT_MINOR_VERSION >= 16
                 // This one setting takes a named constant, so we'll look up
                 // the right one.
-                if (!strcmp(key, "hardware_acceleration_policy")) {
+
+                if (help_mode) printf("hardware_acceleration_policy\n");
+                else if (!strcmp(key, "hardware_acceleration_policy")) {
                     if (strcmp(value, "ON_DEMAND")) {
                         webkit_settings_set_hardware_acceleration_policy(
                                 wk_settings,
@@ -561,7 +603,9 @@ int main(int argc, char **argv) {
                     }
                     continue;
                 }
+#endif
 
+                if (help_mode) exit(0);
 
                 // If we get this far, the option name must be something we
                 // don't recognise.
