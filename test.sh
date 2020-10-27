@@ -13,16 +13,16 @@
 #
 export DISPLAY=:99
 echo "Starting Xvfb"
-# The Xvfb that comes with Ubuntu, has defaults to 8-bit depth, so the
-# -screen spec is necessary for compositing to work correctly...
+# Xvfb at least on Ubuntu defaults to 8-bit depth, so the -screen spec is
+# necessary to specify 24 bits, so compositing to works correctly.
 Xvfb -screen 0 1280x1024x24 +extension Composite "$DISPLAY" & xvfb_pid=$!
 sleep 3
 echo '- - -'
-echo "Starting compositor"
+echo "Starting compositor (compton)"
 compton --config /dev/null & compositor_pid=$!
 sleep 3
 echo '- - -'
-echo "Setting background to black"
+echo "Setting X root window background to #000000 (black)"
 hsetroot -solid "#000000"
 sleep 0.5
 echo '- - -'
@@ -51,18 +51,25 @@ out=$(xwd -root -silent | convert xwd:- -depth 8 -crop "1x1+0+0" txt:- | grep -o
 echo "Pixel value at (0,0): $out"
 echo '- - -'
 
-echo "Killing the background processes"
+echo "Killing hudkit"
 kill "$hudkit_pid"
+wait "$hudkit_pid"
+echo "Killing compton"
 kill "$compositor_pid"
+wait "$compositor_pid"
+echo "Killing Xvfb"
 kill "$xvfb_pid"
+wait "$xvfb_pid"
 echo '- - -'
 
-echo "Checking value"
+echo "Comparing pixel value"
+expected_value="#808080"
 rm "$tmpfile"
-if [ "$out" != "#808080" ]; then
+if [ "$out" != "$expected_value" ]; then
     echo "Pixel didn't match!"
+    echo "Expected $expected_value, got $out"
     exit 1;
 else
-    echo "Pixel matched.  Exiting happily."
+    echo "Pixel matched!  Test passed."
     exit 0
 fi
