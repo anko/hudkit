@@ -318,7 +318,7 @@ bool on_page_load_failed(WebKitWebView *web_view, WebKitLoadEvent load_event,
 }
 
 void printUsage(char *programName) {
-    fprintf(stderr, "\
+    printf("\
 USAGE: %s <URL> [--help] [--webkit-settings option1=value1,...]\n\
 \n\
     <URL>\n\
@@ -336,7 +336,7 @@ USAGE: %s <URL> [--help] [--webkit-settings option1=value1,...]\n\
 \n\
     --webkit-settings\n\
         Followed by comma-separated setting names to pass to the WebKit web\n\
-        view; for details of what options are available, see the list at \n\
+        view; for details of what options are available, see the list at\n\
         https://webkitgtk.org/reference/webkit2gtk/stable/WebKitSettings.html\n\
         Please format setting names as underscore_separated_words.\n\
 \n\
@@ -351,7 +351,6 @@ USAGE: %s <URL> [--help] [--webkit-settings option1=value1,...]\n\
         String and integer options can look like\n\
             option_name=foo\n\
             option_name=42\n\
-            option_name=0xbeef\n\
         The enum option hardware_acceleration_policy has these valid values\n\
             ON_DEMAND, ALWAYS, NEVER\n\
 \n\

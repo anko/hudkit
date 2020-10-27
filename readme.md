@@ -70,7 +70,6 @@ USAGE: ./hudkit <URL> [--help] [--webkit-settings option1=value1,...]
         String and integer options can look like
             option_name=foo
             option_name=42
-            option_name=0xbeef
         The enum option hardware_acceleration_policy has these valid values
             ON_DEMAND, ALWAYS, NEVER
 
