@@ -233,30 +233,29 @@ Probably.  [Report them][new-issue].
 > Is it safe to direct Hudkit at some random untrusted web page on the
 > internet?
 
-No.  The `window.Hudkit` object and other background stuff are exposed to every
-page Hudkit loads.  The API is not designed to resist attacks, and I might add
-stuff in the future that exposes even more unsafe things than it does now.
-Please treat Hudkit like you'd treat a command line, only running stuff you
-trust.
+No.  Hudkit is not a web browser.  The `window.Hudkit` object and other
+background stuff are exposed to every page Hudkit loads.  The API is not
+designed to resist attacks, and I might add stuff in the future that exposes
+even more unsafe things than it does now.  Please treat Hudkit like you'd treat
+a command line, only running stuff you trust.
 
-> How do ensure my page doesn't accidentally load remote resources?
+> How can I ensure my HUD doesn't accidentally load remote resources?
 
 Define a
-[Content-Security-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy),
-(CSP).  Hudkit supports those through WebKit.
+[Content-Security-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy)
+(CSP), like you'd do when developing any other web page.  Hudkit supports those
+through WebKit.
 
-A reasonable starting point:  You want to allow requests to the same host your
-page was loaded from (your own computer), but block all requests to anywhere
-else.  Also, allow inline `<script>` and `<style>` tags.
-
-You can make Hudkit enforce that by adding the appropriate tag inside `<head>`:
+Good starting point:  To allow requests to the same host your page was loaded
+from (your own computer), but block all requests to anywhere else, and also
+allow inline `<script>` and `<style>` tags, add this inside `<head>`:
 
 ```html
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'">
 ```
 
-You can test that's working by e.g. adding a `<img src="http://example.com/">`
-tag to the page.  You'll see a log entry when it gets blocked:
+You can test it by e.g. adding a `<img src="http://example.com/">` tag to the
+page.  You'll see a log entry when it gets blocked:
 
 ```
 CONSOLE SECURITY ERROR Refused to load http://example.com/ because it appears
@@ -276,11 +275,11 @@ compositor](https://en.wikipedia.org/wiki/Compositing_window_manager).  So
 you'll need to install and run a standalone compositor.  I recommend
 [compton][compton], or [picom][picom].
 
-> I can't type anything into the Web Inspector if it's attached to the overlay
-> window!
+> I can't type anything into the Web Inspector while it's attached to the
+> overlay window!
 
-It's a known problem.  You can detach the web inspector into its own window
-with one of the buttons in the top-left corner.  It works normally when
+Yep, it's a known problem.  You can detach the web inspector into its own
+window with one of the buttons in the top-left corner.  It works normally when
 detached.
 
 This bug is hard to fix for complex technical reasons:  In short, we have to
@@ -295,9 +294,8 @@ has its own problems.
 > to debug, but I forgot to pass the `--inspect` flag, and restarting it would
 > lose its current state.  What do?
 
-Send it a `SIGUSR1` signal to open the Web Inspector.
-
-    killall hudkit --signal SIGUSR1
+You can send the Hudkit process a `SIGUSR1` signal to open the Web Inspector.
+For example, `killall hudkit --signal SIGUSR1`.
 
 ## Related programs
 
@@ -323,7 +321,11 @@ Send it a `SIGUSR1` signal to open the Web Inspector.
 ## Programs that I think work well with Hudkit
 
  - [`xkbcat`][xkbcat] can capture keystrokes everywhere in X11, for making a
-   keyboard visualiser for livestreaming, or for triggering firework effects.
+   keyboard visualiser for livestreaming, or for triggering eye candy.
+ - `sxhkd` is a fairly minimal X11 keyboard shortcut daemon.  Can use it to run
+   arbitrary commands in response to key combinations, such as throwing data
+   into a named pipe read by a locally running web server that's in contact
+   with hudkit by WebSocket.
  - `mpv` with the `--input-ipc-server` flag can be queried for the currently
    playing music track.  Various other music players can do this too if you
    google around.
