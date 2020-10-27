@@ -130,6 +130,24 @@ Hudkit.getMonitorLayout((err, monitors) => {
 })
 ```
 
+### `Hudkit.on(eventName, listener)`
+
+Registers the given `listener` function to be called on events by the string
+name `eventName`.
+
+Currently listenable events:
+
+ - `monitors-changed`: fired when a monitor is logically connected or
+   disconnected, such as through `xrandr`.
+
+   No arguments are passed.  Call `Hudkit.getMonitorLayout` to get the updated
+   layout.
+
+### `Hudkit.off(eventName, listener)`
+
+De-registers the given `listener` from the given `eventName`, so it will no
+longer be called.
+
 ### `Hudkit.setClickableAreas(rectangles, callback)`
 
 Parameters:
@@ -141,8 +159,6 @@ Parameters:
    The area of the desktop represented by the union of the given rectangles
    become input-opaque (able to receive mouse events).  All other areas become
    input-transparent.
-
-   The coordinate space corresponds to that of `getMonitorLayout`.
 
  - `callback(err, monitors)`: a function called when the request completes:
 
@@ -160,16 +176,18 @@ Hudkit.setClickableAreas([
 ], err => console.error(err))
 ```
 
-Note that each time this is called, the total given area _replaces_ the
-previous one.
+#### Important notes
 
-If the Web Inspector is attached to the overlay window, the area it occupies is
-automatically kept clickable, indepdendently of calls to this function.
+ - Each time this function is called, the total given area _replaces_ the
+   previous one.
 
-I imagine a typical use-case for this would be to make your statusbar
-clickable, so you can make contextual pop-ups appear when you hover over parts
-of it.  If you want the pop-up to be clickable too, call this again with its
-`.getBoundingClientRect()` included.
+ - If the Web Inspector is attached to the overlay window, the area it occupies
+   is automatically kept clickable, indepdendently of calls to this function.
+
+ - When monitors are connected or disconnected, your clickable areas are reset,
+   because their positioning would be unpredictable.  Use
+   `Hudkit.on('monitors-changed', () => { ... })` to listen to monitor layout
+   changes and update your clickable areas accordingly!
 
 ### `Hudkit.showInspector(callback)`
 

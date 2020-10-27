@@ -48,32 +48,39 @@
 
         //Hudkit.showInspector()
 
-        Hudkit.getMonitorLayout((e, monitors) => {
+        const showMonitorFrames = () => {
+            Hudkit.getMonitorLayout((e, monitors) => {
+                let container = document.getElementById('monitor-frame-container')
+                // Clear container
+                for (let i = container.children.length; i > 0; --i) {
+                    container.removeChild(container.children[0])
+                }
 
-            let container = document.getElementById('monitor-frame-container')
+                monitors.forEach((monitor, monitorIndex) => {
 
-            monitors.forEach((monitor, monitorIndex) => {
+                    let monitorFrame = document.createElement('div')
+                    monitorFrame.setAttribute('class', 'monitor-frame')
+                    monitorFrame.style.left = monitor.x
+                    monitorFrame.style.top = monitor.y
+                    monitorFrame.style.width = monitor.width
+                    monitorFrame.style.height = monitor.height
+                    container.appendChild(monitorFrame)
 
-                let monitorFrame = document.createElement('div')
-                monitorFrame.setAttribute('class', 'monitor-frame')
-                monitorFrame.style.left = monitor.x
-                monitorFrame.style.top = monitor.y
-                monitorFrame.style.width = monitor.width
-                monitorFrame.style.height = monitor.height
-                container.appendChild(monitorFrame)
-
-                let labelDiv = document.createElement('div')
-                labelDiv.style.margin = '0 auto'
-                labelDiv.style.width = '50%'
-                let label = document.createElement('h1')
-                label.appendChild(document.createTextNode(monitor.name))
-                label.style['font-size'] = '100pt'
-                label.style.color = 'red'
-                label.style['text-align'] = 'center'
-                labelDiv.appendChild(label)
-                monitorFrame.appendChild(labelDiv)
+                    let labelDiv = document.createElement('div')
+                    labelDiv.style.margin = '0 auto'
+                    labelDiv.style.width = '50%'
+                    let label = document.createElement('h1')
+                    label.appendChild(document.createTextNode(monitor.name))
+                    label.style['font-size'] = '100pt'
+                    label.style.color = 'red'
+                    label.style['text-align'] = 'center'
+                    labelDiv.appendChild(label)
+                    monitorFrame.appendChild(labelDiv)
+                })
             })
-        })
+        }
+        showMonitorFrames()
+        Hudkit.on('monitors-changed', showMonitorFrames)
 
     </script>
 </body>

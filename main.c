@@ -46,11 +46,12 @@ void realize_input_shape() {
     }
 
     GdkWindow *gdk_window = gtk_widget_get_window(GTK_WIDGET(window));
-    gdk_window_input_shape_combine_region(GDK_WINDOW(gdk_window), shape, 0,0);
+    if (gdk_window) // This might be NULL if this gets called during initialisation
+        gdk_window_input_shape_combine_region(gdk_window, shape, 0,0);
     cairo_region_destroy(shape);
 }
 
-static void on_callback_finished(GObject *object, GAsyncResult *result,
+static void on_js_call_finished(GObject *object, GAsyncResult *result,
         gpointer user_data) {
     WebKitJavascriptResult *js_result;
     JSValueRef value;
@@ -79,7 +80,7 @@ void call_js_callback(WebKitWebView *web_view, int callbackId, char *stringified
             callbackId, stringifiedData, callbackId);
 
     webkit_web_view_run_javascript(
-            web_view, buffer, NULL, on_callback_finished, NULL);
+            web_view, buffer, NULL, on_js_call_finished, NULL);
 }
 
 void on_js_call_get_monitor_layout(WebKitUserContentManager *manager,
@@ -582,10 +583,6 @@ int main(int argc, char **argv) {
     g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
     gtk_widget_set_app_paintable(window, TRUE);
 
-    // Set up a callback to react to screen changes
-    g_signal_connect(G_OBJECT(window), "screen-changed",
-            G_CALLBACK(screen_changed), NULL);
-
     //
     // Set up the WebKit web view widget
     //
@@ -596,6 +593,10 @@ int main(int argc, char **argv) {
             WEBKIT_CACHE_MODEL_DOCUMENT_VIEWER);
     WebKitWebView *web_view = WEBKIT_WEB_VIEW(
             webkit_web_view_new_with_context(wk_context));
+
+    // Set up a callback to react to screen changes
+    g_signal_connect(window, "screen-changed",
+            G_CALLBACK(screen_changed), web_view);
 
     // Use the webview settings we parsed out of argv earlier
     webkit_web_view_set_settings(web_view, wk_settings);
@@ -635,7 +636,7 @@ int main(int argc, char **argv) {
 
     // Initialise the window and make it active.  We need this so it can resize
     // it correctly.
-    screen_changed(window, NULL, NULL);
+    screen_changed(window, NULL, web_view);
 
     GdkDisplay *display = gdk_display_get_default();
     GdkRectangle *rectangles = NULL;
@@ -668,8 +669,7 @@ int main(int argc, char **argv) {
     // Set the input shape (area where clicks are recognised) to a zero-width,
     // zero-height region a.k.a. nothing.  This makes clicks pass through the
     // window onto whatever's below.
-    gdk_window_input_shape_combine_region(GDK_WINDOW(gdk_window),
-            cairo_region_create(), 0,0);
+    realize_input_shape();
 
     // Now it's safe to show the window again.  It should be click-through, and
     // the WM should ignore it.
@@ -711,6 +711,19 @@ int main(int argc, char **argv) {
             webkit_user_script_new("\
 let nextCallbackId = 0\n\
 window.Hudkit = {\n\
+  on: function (eventName, callback) {\n\
+    if (window.Hudkit._listeners.has(eventName)) {\n\
+      window.Hudkit._listeners.get(eventName).push(callback)\n\
+    } else {\n\
+      window.Hudkit._listeners.set(eventName, [callback])\n\
+    }\n\
+  },\n\
+  off: function (eventName, callback) {\n\
+    const listenersForThisEvent = window.Hudkit._listeners.get(eventName)\n\
+    if (listenersForThisEvent) {\n\
+      listenersForThisEvent.splice(listenersForThisEvent.indexOf(callback), 1)\n\
+    }\n\
+  },\n\
   getMonitorLayout: function (callback) {\n\
     const id = nextCallbackId++\n\
     window.Hudkit._pendingCallbacks[id] = callback\n\
@@ -731,6 +744,12 @@ window.Hudkit = {\n\
 }\n\
 Object.defineProperty(window.Hudkit, '_pendingCallbacks', {\n\
   value: [],\n\
+  enumerable: false,\n\
+  configurable: false,\n\
+  writable: true,\n\
+})\n\
+Object.defineProperty(window.Hudkit, '_listeners', {\n\
+  value: new Map(),\n\
   enumerable: false,\n\
   configurable: false,\n\
   writable: true,\n\
@@ -779,15 +798,54 @@ static void size_to_screen(GtkWindow *window) {
     gtk_window_set_default_size(window, width, height);
     gtk_window_resize(window, width, height);
     gtk_window_set_resizable(window, false);
+
+    // Remove the user-defined input shape, since it's certainly in completely
+    // the wrong position now.
+    n_user_defined_input_rects = 0;
+    user_defined_input_rects = realloc(user_defined_input_rects, 0);
+    realize_input_shape();
+}
+
+
+void call_js_listeners(WebKitWebView *web_view, char *eventName, char *stringifiedData) {
+    // Calls the user's registered JS listener functions for the given event
+    // name, simply string-placing the stringified data between its call
+    // parentheses.
+    //
+    // Ensure `stringifiedData` is sanitised!  It will basically be `eval`ed in
+    // the web page's context.
+
+    char buffer[sizeof(stringifiedData) + 1024];
+    snprintf(buffer, sizeof(buffer), "\
+(() => { // IIFE\n\
+  const listenersForEvent = window.Hudkit._listeners.get('%s');\n\
+  if (listenersForEvent) {\n\
+    listenersForEvent.forEach(listener => listener(%s))\n\
+  }\n\
+})()", eventName, stringifiedData);
+
+    webkit_web_view_run_javascript(
+            web_view, buffer, NULL, on_js_call_finished, NULL);
+}
+
+
+gulong monitors_changed_handler_id = 0;
+
+static void on_monitors_changed(GdkScreen *screen, gpointer user_data) {
+    WebKitWebView *web_view = (WebKitWebView *)user_data;
+    size_to_screen(GTK_WINDOW(window));
+    call_js_listeners(web_view, "monitors-changed", "");
 }
 
 // This callback runs when the window is first set to appear on some screen, or
 // when it's moved to appear on another.
 static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
-        gpointer userdata) {
+        gpointer user_data) {
+    GdkScreen *screen = gtk_widget_get_screen(widget);
+
+    WebKitWebView *web_view = (WebKitWebView *)user_data;
 
     // Die unless the screen supports compositing (alpha blending)
-    GdkScreen *screen = gtk_widget_get_screen(widget);
     if (!gdk_screen_is_composited(screen)) {
         fprintf(stderr, "Your screen does not support transparency.\n");
         fprintf(stderr, "Maybe your compositor isn't running?\n");
@@ -796,6 +854,13 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
 
     // Ensure the widget can take RGBA
     gtk_widget_set_visual(widget, gdk_screen_get_rgba_visual(screen));
+
+    // Switch monitors-changed subscription from the old screen (if applicable)
+    // to the new one
+    if (old_screen)
+        g_signal_handler_disconnect(old_screen, monitors_changed_handler_id);
+    monitors_changed_handler_id = g_signal_connect(screen, "monitors-changed",
+            G_CALLBACK(on_monitors_changed), web_view);
 
     size_to_screen(GTK_WINDOW(widget));
 }
