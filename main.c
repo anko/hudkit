@@ -802,23 +802,28 @@ static void size_to_screen(GtkWindow *window) {
     // it may be outside the accessible desktop) but it's easier to manage than
     // multiple windows.
 
-    // TODO Find the min x and y too, just in case someone's weird setup
-    // has something other than 0,0 as top-left.
-
     GdkDisplay *display = gdk_display_get_default();
     GdkRectangle *rectangles = NULL;
     int nRectangles = get_monitor_rects(display, &rectangles);
 
-    int width = 0, height = 0;
+    // I can't think of a reason why someone's monitor setup might have a
+    // monitor positioned origin at negative x, y coordinates, but just in case
+    // someone does, we'll cover for it.
+    int x = 0, y = 0, width = 0, height = 0;
     for (int i = 0; i < nRectangles; ++i) {
         GdkRectangle rect = rectangles[i];
-        int actualWidth = rect.x + rect.width;
-        int actualHeight = rect.y + rect.height;
-        if (width < actualWidth) width = actualWidth;
-        if (height < actualHeight) height = actualHeight;
+        int left = rect.x;
+        int top = rect.y;
+        int right = rect.x + rect.width;
+        int bottom = rect.y + rect.height;
+        if (left < x) x = left;
+        if (top < y) y = top;
+        if (width < right) width = right;
+        if (height < bottom) height = bottom;
     }
     free(rectangles);
 
+    gtk_window_move(GTK_WINDOW(window), x, y);
     gtk_window_set_default_size(window, width, height);
     gtk_window_resize(window, width, height);
     gtk_window_set_resizable(window, false);
