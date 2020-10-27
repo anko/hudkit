@@ -275,8 +275,9 @@ bool on_inspector_detach(WebKitWebInspector *inspector, gpointer user_data) {
 
     WebKitWebViewBase *inspector_web_view = webkit_web_inspector_get_web_view(
             inspector);
-    g_signal_handler_disconnect(GTK_WIDGET(inspector_web_view),
-            inspector_size_allocate_handler_id);
+    if (inspector_size_allocate_handler_id)
+        g_signal_handler_disconnect(GTK_WIDGET(inspector_web_view),
+                inspector_size_allocate_handler_id);
     inspector_size_allocate_handler_id = 0;
     attached_inspector_input_rect.x = 0;
     attached_inspector_input_rect.y = 0;
