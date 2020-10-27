@@ -278,9 +278,9 @@ you'll need to install and run a standalone compositor.  I recommend
 > I can't type anything into the Web Inspector while it's attached to the
 > overlay window!
 
-Yep, it's a known problem.  You can detach the web inspector into its own
-window with one of the buttons in the top-left corner.  It works normally when
-detached.
+Yep, it's a known problem.  You can work around it by detaching the web
+inspector into its own window, with one of the buttons in the top-left corner.
+It works normally when detached.
 
 This bug is hard to fix for complex technical reasons:  In short, we have to
 set X11's *override-redirect* flag on the overlay window, to guarantee that
