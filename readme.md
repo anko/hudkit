@@ -1,6 +1,6 @@
-# Hudkit&ensp;[![](https://img.shields.io/travis/anko/hudkit?style=flat-square)](https://travis-ci.org/anko/hudkit)
+# Hudkit&ensp;[![](https://img.shields.io/travis/anko/hudkit?style=flat-square)](https://travis-ci.org/anko/hudkit) ![](https://raw.githubusercontent.com/gist/anko/8c88a25fb0cf3480bff9f4a2d6091d9c/raw/97ce36a92df2b0f72d6375c9a7e56d10846d80ec/amazing.svg)
 
-Transparent click-through web browser overlay (or [HUD][wiki-hud]) over your
+Transparent click-through web browser overlay ("[HUD][wiki-hud]") over your
 whole desktop, using [WebKit][webkit].
 
 If you know web development, you can use Hudkit to make the _coolest statusbar
@@ -16,7 +16,7 @@ using a fullscreen transparent web view for.
  - Small executable.  Uses native GTK and WebKit libraries.
  - Supports modern web APIs like WebSockets, WebAudio, WebGL, etc.
 
-OS:  Linux (X11) yes.  OS X maybe.  Linux (Wayland) no.  Windows no.
+Platforms:&emsp;:heavy\_check\_mark: Linux (X11)&emsp;:grey\_question: OS X&emsp;:no\_entry\_sign: ~~Linux (Wayland)~~&emsp;:no\_entry\_sign: ~~Windows~~
 
 ## Quick start
 
@@ -228,7 +228,7 @@ If you build on another distro, I'm interested in how it went.
 
 Probably.  [Report them][new-issue].
 
-## Solutions to common problems
+## FAQ
 
 > Is it safe to direct Hudkit at some random untrusted web page on the
 > internet?
