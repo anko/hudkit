@@ -9,13 +9,14 @@ using a fullscreen transparent web view for.
 
 ## Features
 
- - Works with multiple monitors.
+ - Works with multiple monitors, and connecting/disconnecting them.
  - Has a [JavaScript API](#javascript-api), so scripts on the page can query
    monitor layout and change which areas of the overlay are clickable, for
    example.
- - Small executable.  Uses system GTK and WebKit libraries, not some big
-   Chromium bundle.
- - Supports relatively modern web APIs like WebSockets, WebAudio, WebGL, etc.
+ - Small executable.  Uses native GTK and WebKit libraries.
+ - Supports modern web APIs like WebSockets, WebAudio, WebGL, etc.
+
+OS:  Linux (X11) yes.  OS X maybe.  Linux (Wayland) no.  Windows no.
 
 ## Quick start
 
@@ -223,18 +224,16 @@ If you build on another distro, I'm interested in how it went.
 
 Probably.  [Report them][new-issue].
 
-## Limitations
-
- - **Requires a restart if rearranging monitors**.  Hudkit can handle multi-monitor setups: it detects their arrangement on startup, not dynamically.
-
 ## Solutions to common problems
 
 > Is it safe to direct Hudkit at some random untrusted web page on the
 > internet?
 
 No.  The `window.Hudkit` object and other background stuff are exposed to every
-page Hudkit loads.  The API is not designed to resist attacks.  Please only
-load pages you trust.
+page Hudkit loads.  The API is not designed to resist attacks, and I might add
+stuff in the future that exposes even more unsafe things than it does now.
+Please treat Hudkit like you'd treat a command line, only running stuff you
+trust.
 
 > How do ensure my page doesn't accidentally load remote resources?
 
