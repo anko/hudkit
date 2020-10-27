@@ -291,6 +291,14 @@ which is fine for mouse events (since they aren't dependent on input focus),
 but it means no keyboard events.  Unless you grab the keyboard device, which
 has its own problems.
 
+> My currently running Hudkit instance's page is in a weird state that I want
+> to debug, but I forgot to pass the `--inspect` flag, and restarting it would
+> lose its current state.  What do?
+
+Send it a `SIGUSR1` signal to open the Web Inspector.
+
+    killall hudkit --signal SIGUSR1
+
 ## Related programs
 
 - [Electron][electron].  I've heard it's possible to make Electron

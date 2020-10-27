@@ -7,9 +7,25 @@
 #include <stdlib.h>          // exit
 #include <stdio.h>           // files
 #include <inttypes.h>        // string to int conversion
+#include <signal.h>          // handling SIGUSR1
 
 // Overlay window handle.  Global because almost everything touches it.
 GtkWidget *window;
+WebKitWebInspector *inspector;
+
+void show_inspector(bool startAttached) {
+    // For some reason calling this twice makes it start detached, but the
+    // inspector doesn't seem to respond in any way to the actual functions
+    // that are supposed put it in detached or attached mode.  It is a
+    // mysterious creature.
+    webkit_web_inspector_show(inspector);
+    if (!startAttached)
+        webkit_web_inspector_show(inspector);
+}
+
+void on_signal_sigusr1(int signal_number) {
+    show_inspector(FALSE);
+}
 
 static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
         gpointer user_data);
@@ -236,13 +252,7 @@ void on_js_call_show_inspector(WebKitUserContentManager *manager,
 
     WebKitWebInspector *inspector = webkit_web_view_get_inspector(
             WEBKIT_WEB_VIEW(web_view));
-    // For some reason calling this twice makes it start detached, but the
-    // inspector doesn't seem to respond in any way to the actual functions
-    // that are supposed put it in detached or attached mode.  It is a
-    // mysterious creature.
-    webkit_web_inspector_show(WEBKIT_WEB_INSPECTOR(inspector));
-    if (!startAttached)
-        webkit_web_inspector_show(WEBKIT_WEB_INSPECTOR(inspector));
+    show_inspector(startAttached);
 
     call_js_callback(web_view, callbackId, "null");
 }
@@ -618,7 +628,7 @@ int main(int argc, char **argv) {
 
     // Initialise inspector, and start tracking when it's attached to or
     // detached from the overlay window.
-    WebKitWebInspector *inspector = webkit_web_view_get_inspector(
+    inspector = webkit_web_view_get_inspector(
             WEBKIT_WEB_VIEW(web_view));
     g_signal_connect(inspector, "attach",
             G_CALLBACK(on_inspector_attach), NULL);
@@ -626,8 +636,13 @@ int main(int argc, char **argv) {
             G_CALLBACK(on_inspector_detach), NULL);
 
     if (open_inspector_immediately) {
-        webkit_web_inspector_show(WEBKIT_WEB_INSPECTOR(inspector));
+        show_inspector(FALSE);
     }
+
+    struct sigaction usr1_action = {
+        .sa_handler = on_signal_sigusr1
+    };
+    sigaction(SIGUSR1, &usr1_action, NULL);
 
     // Make transparent
     GdkRGBA rgba = { .alpha = 0.0 };
