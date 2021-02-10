@@ -8,10 +8,15 @@
 #include <stdio.h>           // files
 #include <inttypes.h>        // string to int conversion
 #include <signal.h>          // handling SIGUSR1
+#include <uv.h>              // child process spawning
+#include <assert.h>          // reporting total failure
+
+#define assert_message(x, msg) assert(((void) msg, x))
 
 // Overlay window handle.  Global because almost everything touches it.
 GtkWidget *window;
 WebKitWebInspector *inspector;
+uv_loop_t *uv_loop;
 
 void show_inspector(bool startAttached) {
     // For some reason calling this twice makes it start detached, but the
@@ -99,6 +104,83 @@ void call_js_callback(WebKitWebView *web_view, int callbackId, char *stringified
             web_view, buffer, NULL, on_js_call_finished, NULL);
 }
 
+char *escape_js_string_content(const char *string) {
+    int length = strlen(string);
+
+    // Worst-case the escaped output twice as long: if we need to escape every
+    // character.  Plus 1 for the terminating \0.
+    char *escaped_string = calloc(2 * length + 1, sizeof(char));
+    char *end_pointer = escaped_string;
+
+    for (int index = 0; index < length; ++index) {
+        char charHere = string[index];
+        // Spec for JS string literals' parsing grammar:
+        // http://www.ecma-international.org/ecma-262/5.1/#sec-7.8.4
+        //
+        // We have to backslash-escape every character excluded from either the
+        // DoubleStringCharacter or SingleStringCharacter productions.
+        switch (charHere) {
+
+            // Directly named excluded characters:
+            // \ (backslash)
+            case '\\':
+            // ' (single quote)
+            case '\'':
+            // " (double quote)
+            case '"':
+                // Just put a backslash in front of it
+                memset(end_pointer++, '\\', 1);
+                memset(end_pointer++, charHere, 1);
+                break;
+
+            // Characters excluded because they're part of LineTerminator:
+            // <LF> (line feed)
+            case '\n':
+                memset(end_pointer++, '\\', 1);
+                memset(end_pointer++, 'n', 1);
+                break;
+            // <CR> (carriage return)
+            case '\r':
+                memset(end_pointer++, '\\', 1);
+                memset(end_pointer++, 'r', 1);
+                break;
+            // <LS> (line separator)
+            // <PS> (paragraph separator)
+            //
+            // Those last 2 are Unicode, and not representable in ASCII, which
+            // we're working in, so we don't have to deal with them.
+            //
+            // Just in case, I checked that WebKit really does treat the script
+            // as ASCII, discarding out-of range bit patterns that would form
+            // valid Unicode.  It does this even if the target document is
+            // declared with <meta charset="utf-8">.
+
+            // Anything  else is fine in a JavaScript string literal.  Yes,
+            // this even includes other control characters.
+            default:
+                memset(end_pointer++, charHere, 1);
+                break;
+        }
+    }
+    // The buffer was oversized already, and zeroed on allocation, so we
+    // don't have to explicitly write a null byte to terminate it.
+
+    return escaped_string; // Ownership passed out.
+}
+
+char *to_js_string(const char *string) {
+    // Escape the given cstring and wrap it in double-quotes
+    char *escaped_content = escape_js_string_content(string);
+    // +3 because 2 quotes + 1 null
+    int buffer_length = 3 + strlen(escaped_content);
+    char *buffer = calloc(buffer_length, sizeof(char));
+    snprintf(buffer, buffer_length, "\"%s\"", escaped_content);
+    free(escaped_content);
+
+    // Ownership passed out.
+    return buffer;
+}
+
 void on_js_call_get_monitor_layout(WebKitUserContentManager *manager,
         WebKitJavascriptResult *sentData,
         gpointer arg) {
@@ -133,65 +215,8 @@ void on_js_call_get_monitor_layout(WebKitUserContentManager *manager,
         // Uncomment to test sample XSS attack:
         //monitor_model_string = "evil\', attack: alert('xss'), _:\'";
 
-        int monitor_model_string_length = strlen(monitor_model_string);
-
-        // Worst-case the escaped output twice as long: if we need to escape
-        // every character.  Plus 1 for the terminating \0.
-        char escaped_monitor_model_string[2 * monitor_model_string_length + 1];
-        char *end_pointer = escaped_monitor_model_string;
-
-        for (int index = 0; index < monitor_model_string_length; ++index) {
-            char charHere = monitor_model_string[index];
-            // Spec for JS string literals' parsing grammar:
-            // http://www.ecma-international.org/ecma-262/5.1/#sec-7.8.4
-            //
-            // We have to backslash-escape every character excluded from either
-            // the DoubleStringCharacter or SingleStringCharacter productions.
-            switch (charHere) {
-
-                // Directly named excluded characters:
-                // \ (backslash)
-                case '\\':
-                // ' (single quote)
-                case '\'':
-                // " (double quote)
-                case '"':
-                    // Just put a backslash in front of it
-                    memset(end_pointer++, '\\', 1);
-                    memset(end_pointer++, charHere, 1);
-                    break;
-
-                // Characters excluded because they're part of LineTerminator:
-                // <LF> (line feed)
-                case '\n':
-                    memset(end_pointer++, '\\', 1);
-                    memset(end_pointer++, 'n', 1);
-                    break;
-                // <CR> (carriage return)
-                case '\r':
-                    memset(end_pointer++, '\\', 1);
-                    memset(end_pointer++, 'r', 1);
-                    break;
-                // <LS> (line separator)
-                // <PS> (paragraph separator)
-                //
-                // Those last 2 are Unicode, and not representable in ASCII,
-                // which we're working in, so we don't have to deal with them.
-                //
-                // Just in case, I checked that WebKit really does treat the
-                // script as ASCII, discarding out-of range bit patterns that
-                // would form valid Unicode.  It does this even if the target
-                // document is declared with <meta charset="utf-8">.
-
-                // Anything  else is fine in a JavaScript string literal.  Yes,
-                // this even includes other control characters.
-                default:
-                    memset(end_pointer++, charHere, 1);
-                    break;
-            }
-        }
-        // The buffer was oversized already, and zeroed on allocation, so we
-        // don't have to explicitly write a null byte to terminate it.
+        char *escaped_monitor_model_string =
+            escape_js_string_content(monitor_model_string);
 
         GdkRectangle rect = rectangles[i];
         snprintf(
@@ -199,6 +224,8 @@ void on_js_call_get_monitor_layout(WebKitUserContentManager *manager,
                 sizeof(buffer),
                 "{name:'%s',x:%i,y:%i,width:%i,height:%i},",
                 escaped_monitor_model_string, rect.x, rect.y, rect.width, rect.height);
+        // snprintf copies, so we can free here.
+        free(escaped_monitor_model_string);
     }
     snprintf(buffer + strlen(buffer), sizeof(buffer), "]");
 
@@ -220,8 +247,8 @@ void on_js_call_set_clickable_areas(WebKitUserContentManager *manager,
     //printf("nRectangles %i\n", nRectangles);
 
     n_user_defined_input_rects = nRectangles;
-    user_defined_input_rects = realloc(
-            user_defined_input_rects, nRectangles * sizeof(GdkRectangle));
+    user_defined_input_rects = reallocarray(
+            user_defined_input_rects, nRectangles, sizeof(GdkRectangle));
 
     JSCValue *jsRectangles = jsc_value_object_get_property(jsValue, "rectangles");
     for (int i = 0; i < nRectangles; ++i) {
@@ -241,6 +268,207 @@ void on_js_call_set_clickable_areas(WebKitUserContentManager *manager,
 
     call_js_callback(web_view, callbackId, "null");
 }
+
+struct spawn_data {
+    int callbackId;
+    WebKitWebView *web_view;
+    uv_stdio_container_t *stdio;
+    int stdio_count;
+};
+
+void call_js_process_event_listener(struct spawn_data *spawn_data,
+        char *eventName, char *eventData) {
+    // eventName is controlled by us, not user code, so we don't have to worry
+    // about escaping it.
+
+    // eventData might be anything; it's up to calling code to ensure it's
+    // safe and escaped.
+
+    char buffer[1024];
+    snprintf(buffer, sizeof(buffer), "\
+(() => { // IIFE\n\
+  const handler = window.Hudkit._processEventListeners.get(%d);\n\
+  handler('%s', %s)\n\
+})()", spawn_data->callbackId, eventName, eventData);
+    webkit_web_view_run_javascript(
+            spawn_data->web_view, buffer, NULL, on_js_call_finished, NULL);
+}
+
+void on_child_exit(uv_process_t *handle, int64_t status, int signal) {
+
+    struct spawn_data *spawn_data = handle->data;
+
+    char buffer[10];
+    snprintf(buffer, sizeof(buffer), "%ld", status);
+
+    call_js_process_event_listener(handle->data, "exit", buffer);
+
+    uv_close((uv_handle_t*) handle, NULL);
+
+    // Free the allocated pipes
+    for (int i = 0; i < spawn_data->stdio_count; ++i) {
+        free(spawn_data->stdio[i].data.stream);
+    }
+    // Free the uv_stdio_container_t
+    free(spawn_data->stdio);
+    free(spawn_data);
+    free(handle);
+}
+
+void raise_js_process_error(uv_process_t *handle, const char *error) {
+    char *js_string = to_js_string(error);
+    call_js_process_event_listener(handle->data, "error", js_string);
+    free(js_string);
+}
+
+
+void on_allocate(uv_handle_t *handle, size_t size, uv_buf_t *buffer) {
+    // Allocate 1 more slot to leave space for a null.
+    *buffer = uv_buf_init((char *) malloc(size + 1), size);
+}
+
+void on_read_out(uv_stream_t *stream, ssize_t n, const uv_buf_t *buffer) {
+    if (n < 0) {
+        if (n == UV_EOF) { // End of file
+            uv_close((uv_handle_t *)stream, NULL);
+            call_js_process_event_listener(stream->data, "stdoutData", "null");
+        }
+    } else if (n > 0) {
+        // Ensure terminating null.
+        buffer->base[n] = '\0';
+        char *js_string = to_js_string(buffer->base);
+        call_js_process_event_listener(stream->data, "stdoutData", js_string);
+        free(js_string);
+    }
+
+    if (buffer->base) free(buffer->base);
+}
+
+void on_read_err(uv_stream_t *stream, ssize_t n, const uv_buf_t *buffer) {
+    // TODO as above with stdout
+
+    if (n < 0) {
+        if (n == UV_EOF) { // End of file
+            // TODO
+            printf("err: eof\n");
+            uv_close((uv_handle_t *)stream, NULL);
+        }
+    } else if (n > 0) {
+        // TODO
+        printf("err: ");
+        fwrite(buffer->base, sizeof(char), buffer->len, stdout);
+        printf("\n");
+    }
+
+    if (buffer->base) free(buffer->base);
+}
+
+void on_js_call_spawn(WebKitUserContentManager *manager,
+        WebKitJavascriptResult *sentData,
+        gpointer arg) {
+    WebKitWebView *web_view = WEBKIT_WEB_VIEW(arg);
+
+    // Get arguments from JS context
+    JSCValue *jsValue = webkit_javascript_result_get_js_value(sentData);
+
+    int callbackId = jsc_value_to_int32(
+            jsc_value_object_get_property(jsValue, "id"));
+
+    char *program = jsc_value_to_string(
+            jsc_value_object_get_property(jsValue, "program"));
+
+    JSCValue *argsArray = jsc_value_object_get_property(jsValue, "args");
+    int nArgs = jsc_value_to_int32(
+        jsc_value_object_get_property(argsArray, "length"));
+    char *args[nArgs + 2];
+    args[0] = program;
+    for (int i = 0; i < nArgs; ++i) {
+        args[i + 1] = jsc_value_to_string(
+                jsc_value_object_get_property_at_index(argsArray, i));
+    }
+    args[nArgs + 1] = NULL;
+
+    //printf("program %s with %d args:\n", program, nArgs);
+    //for (int i = 0; i < nArgs + 1; ++i) {
+    //    printf("args[%d] = %s\n", i, args[i]);
+    //}
+
+    // The handle needs to stay valid throughout the requested operation (the
+    // child process running), so we have to heap-allocate.  This is freed in
+    // the exit callback.
+    uv_process_t *handle = malloc(sizeof(uv_process_t));
+    uv_process_options_t options = {0}; // Clear
+    options.file = args[0];
+    options.args = args;
+    options.exit_cb = on_child_exit;
+
+    uv_pipe_t *pipe_in  = malloc(sizeof(uv_pipe_t));
+    uv_pipe_t *pipe_out = malloc(sizeof(uv_pipe_t));
+    uv_pipe_t *pipe_err = malloc(sizeof(uv_pipe_t));
+    uv_pipe_init(uv_loop, pipe_in,  0 /*no ipc*/);
+    uv_pipe_init(uv_loop, pipe_out, 0 /*no ipc*/);
+    uv_pipe_init(uv_loop, pipe_err, 0 /*no ipc*/);
+
+    uv_stdio_container_t *stdio = calloc(3, sizeof(uv_pipe_t));
+    // "Readable" and "writable" here are from the child process' perspective.
+    stdio[STDIN_FILENO] .flags = UV_CREATE_PIPE | UV_READABLE_PIPE;
+    stdio[STDIN_FILENO] .data.stream = (uv_stream_t *) pipe_in;
+    stdio[STDOUT_FILENO].flags = UV_CREATE_PIPE | UV_WRITABLE_PIPE;
+    stdio[STDOUT_FILENO].data.stream = (uv_stream_t *) pipe_out;
+    stdio[STDERR_FILENO].flags = UV_CREATE_PIPE | UV_WRITABLE_PIPE;
+    stdio[STDERR_FILENO].data.stream = (uv_stream_t *) pipe_err;
+
+    options.stdio = stdio;
+    options.stdio_count = 3;
+
+    // Store the callback ID and a reference to the web view, in the handle's
+    // user data property.
+    struct spawn_data *spawn_data = malloc(sizeof(struct spawn_data));
+    spawn_data->callbackId = callbackId;
+    spawn_data->web_view = web_view;
+    spawn_data->stdio = stdio;
+    spawn_data->stdio_count = 3;
+    handle->data = spawn_data;
+    // Same stuff in the pipes too, so on_allocate and on_read can see them.
+    pipe_in ->data = spawn_data;
+    pipe_out->data = spawn_data;
+    pipe_err->data = spawn_data;
+
+    int r;
+    if ((r = uv_spawn(uv_loop, handle, &options))) {
+        const char *error = uv_strerror(r);
+
+        fprintf(stderr, "Error spawning program '%s': %s\n", program, error);
+        raise_js_process_error(handle, error);
+    } else {
+        char buffer[100];
+        snprintf(buffer, sizeof(buffer), "%d", handle->pid);
+
+        call_js_process_event_listener(spawn_data, "start", buffer);
+
+        // Start listening to pipes.  This is fine and necessary to do after
+        // uv_spawn, not before.  We're still in the same uv loop tick as the
+        // spawn, and so no data has been read or written yet.
+
+        r = uv_read_start((uv_stream_t *)pipe_out, on_allocate, on_read_out);
+        // TODO expose pipe errors with js callback
+        if (r) {
+            const char *error = uv_strerror(r);
+            fprintf(stderr, "Error reading stdout from '%s': %s\n",
+                    program, error);
+            raise_js_process_error(handle, error);
+        }
+        r = uv_read_start((uv_stream_t *)pipe_err, on_allocate, on_read_err);
+        if (r) {
+            const char *error = uv_strerror(r);
+            fprintf(stderr, "Error reading stderr from '%s': %s\n",
+                    program, error);
+            raise_js_process_error(handle, error);
+        }
+        // TODO write initial stdin
+    }
+}
+
 void on_js_call_show_inspector(WebKitUserContentManager *manager,
         WebKitJavascriptResult *sentData,
         gpointer arg) {
@@ -325,6 +553,11 @@ bool on_page_load_failed(WebKitWebView *web_view, WebKitLoadEvent load_event,
 
     // Don't call other handlers
     return FALSE;
+}
+
+bool iterate_uv_loop(uv_loop_t *loop) {
+    uv_run(loop, UV_RUN_NOWAIT);
+    return true; // Keep calling this
 }
 
 void printUsage(char *programName) {
@@ -633,6 +866,17 @@ int main(int argc, char **argv) {
     }
 
     //
+    // Set up libuv loop
+    //
+
+    uv_loop = uv_default_loop();
+
+    // Run the libuv loop in parallel with GTK's event loop, by iterating it
+    // whenever GTK is "idle" (meaning when it's not in the middle of painting,
+    // or dealing with resize events, etc).
+    g_idle_add(G_SOURCE_FUNC(iterate_uv_loop), uv_loop);
+
+    //
     // Create the window
     //
 
@@ -754,6 +998,8 @@ int main(int argc, char **argv) {
             G_CALLBACK(on_js_call_set_clickable_areas), web_view);
     g_signal_connect(manager, "script-message-received::showInspector",
             G_CALLBACK(on_js_call_show_inspector), web_view);
+    g_signal_connect(manager, "script-message-received::spawn",
+            G_CALLBACK(on_js_call_spawn), web_view);
 
     // Set up message handlers on the JavaScript side.  These appear under
     // window.webkit.messageHandlers.
@@ -763,6 +1009,8 @@ int main(int argc, char **argv) {
             "setClickableAreas");
     webkit_user_content_manager_register_script_message_handler(manager,
             "showInspector");
+    webkit_user_content_manager_register_script_message_handler(manager,
+            "spawn");
 
     // Set up our Hudkit object to be loaded in the browser JS before anything
     // else does.  Its functions are wrappers around the appropriate WebKit
@@ -776,6 +1024,7 @@ int main(int argc, char **argv) {
             manager,
             webkit_user_script_new("\
 let nextCallbackId = 0\n\
+let nextSpawnId = 0\n\
 window.Hudkit = {\n\
   on: function (eventName, callback) {\n\
     if (window.Hudkit._listeners.has(eventName)) {\n\
@@ -809,6 +1058,39 @@ window.Hudkit = {\n\
     window.Hudkit._pendingCallbacks[id] = callback\n\
     window.webkit.messageHandlers.showInspector.postMessage({id, shouldAttachToWindow})\n\
   },\n\
+  spawn: function (program, args = [], handlers = {}) {\n\
+    const id = nextSpawnId++\n\
+    let fullStdoutBuffer = ''\n\
+    let fullStderrBuffer = ''\n\
+    const handlerFunction = (eventName, data) => {\n\
+      switch (eventName) {\n\
+        case 'start':\n\
+          if (handlers.start) handlers.start(data)\n\
+          break\n\
+        case 'error':\n\
+          if (handlers.error) handlers.error(data)\n\
+          break\n\
+        case 'exit':\n\
+          if (handlers.exit) handlers.exit(data)\n\
+          if (handlers.finish) handlers.finish(fullStdoutBuffer, fullStderrBuffer, data)\n\
+          window.Hudkit._processEventListeners.delete(id)\n\
+          break\n\
+        case 'stdoutData':\n\
+          if (handlers.stdout) handlers.stdout(data)\n\
+          if (handlers.fullStdout) fullStdoutBuffer += data\n\
+          break\n\
+        case 'stderrData':\n\
+          if (handlers.stderr) handlers.stderr(data)\n\
+          if (handlers.fullStderr) fullStderrBuffer += data\n\
+          break\n\
+        default:\n\
+          console.error(`Unexpected spawn event name ${eventName}`)\n\
+          break\n\
+      }\n\
+    }\n\
+    window.Hudkit._processEventListeners.set(id, handlerFunction)\n\
+    window.webkit.messageHandlers.spawn.postMessage({id, program, args})\n\
+  },\n\
 }\n\
 Object.defineProperty(window.Hudkit, '_pendingCallbacks', {\n\
   value: [],\n\
@@ -817,6 +1099,12 @@ Object.defineProperty(window.Hudkit, '_pendingCallbacks', {\n\
   writable: true,\n\
 })\n\
 Object.defineProperty(window.Hudkit, '_listeners', {\n\
+  value: new Map(),\n\
+  enumerable: false,\n\
+  configurable: false,\n\
+  writable: true,\n\
+})\n\
+Object.defineProperty(window.Hudkit, '_processEventListeners', {\n\
   value: new Map(),\n\
   enumerable: false,\n\
   configurable: false,\n\

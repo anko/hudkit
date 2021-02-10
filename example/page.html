@@ -42,6 +42,21 @@
     </div>
     <script>
 
+        Hudkit.spawn('echo', ['hi\'"'], {
+            start: (pid) => {
+                console.log(`started with pid ${pid}`)
+            },
+            stdout: (data) => {
+                console.log('stdout:', JSON.stringify(data))
+            },
+            error: (message) => {
+                console.error(message)
+            },
+            exit: (code) => {
+                console.log(`exited ${code}`)
+            }
+        })
+
         //Hudkit.setClickableAreas([
         //    { x: 0, y: 0, width: 100, height: 1200 }
         //], e => console.log(e))

@@ -271,6 +271,17 @@ For further documentation on CSP, consult [MDN Web
 Docs](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy)
 or [content-security-policy.com](https://content-security-policy.com/).
 
+> Should I use the `--yolo` flag?
+
+If you have to ask, no.  It enables the `Hudkit.spawn` API, which lets the
+loaded page execute arbitrary programs, and see their output.  It is only safe
+to use if you know and trust all JavaScript running on the page, __and__ you
+are certain there is no way your page could load untrusted code.  (See CSP
+notes above.)
+
+If you are __not__ *100% certain* of __both of these things__, using `--yolo`
+opens you up to arbitrary code execution.
+
 > Hudkit says my screen doesn't support transparency.  What does this mean?
 
 You're probably running a plain window manager (like i3, XMonad, or awesomewm),
