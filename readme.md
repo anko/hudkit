@@ -89,48 +89,18 @@ USAGE: ./hudkit <URL> [--help] [--webkit-settings option1=value1,...]
 
 JavaScript on the web page context has a `Hudkit` object, with these properties:
 
-### `Hudkit.showInspector([callback])`
+### `async Hudkit.getMonitorLayout()`
 
-Opens the Web Inspector (also known as Developer Tools), for debugging the page
-loaded in the web view.
-
-:information\_source: You can also start the inspector with the `--inspect`
-flag.  It's usually better, because it works even if your JS crashes and burns
-before being able to call this function.
-
-Arguments:
-
- - `callback(err, monitors)`: *[optional]* a function called when the request
-   completes:
-
-   - `err`: `null` if successful.  Otherwise, an `Error` object.
-
-Return:  `undefined`
-
-### `Hudkit.getMonitorLayout(callback)`
-
-Retrieves monitor size and position data.
-
-Arguments:
-
- - `callback(err, monitors)`: a function called when the request completes:
-
-   - `err`: `null` if successful.  Otherwise, an `Error` object.
-   - `monitors`: If successful, contains an Array of `{name, x, y, width,
-     height}` objects, representing the device names and dimensions of your
-     monitors.
-
-Return:  `undefined`
+Return: an Array of `{name, x, y, width, height}` objects, representing your
+monitors' device names and dimensions.
 
 Example:
 
 ```js
-Hudkit.getMonitorLayout((err, monitors) => {
- if (err) { console.error(err) }
+await Hudkit.getMonitorLayout()
 
- monitors.forEach((m) => {
-   console.log(`${m.name} pos:${m.x},${m.y} size:${m.width},${m.height}`)
- })
+monitors.forEach((m) => {
+  console.log(`${m.name} pos:${m.x},${m.y} size:${m.width},${m.height}`)
 })
 ```
 
@@ -144,30 +114,28 @@ Currently listenable events:
  - `monitors-changed`: fired when a monitor is logically connected or
    disconnected, such as through `xrandr`.
 
-   No arguments are passed.  Call `Hudkit.getMonitorLayout` to get the updated
-   layout.
+   No arguments are passed to the `listener`.  Call `Hudkit.getMonitorLayout`
+   to get the updated layout.
 
 ### `Hudkit.off(eventName, listener)`
 
 De-registers the given `listener` from the given `eventName`, so it will no
 longer be called.
 
-### `Hudkit.setClickableAreas(rectangles, [callback])`
+### `async Hudkit.setClickableAreas(rectangles)`
+
+Sets which areas of the overlay window are clickable.  By default, it is not
+clickable.  The given area replaces the previous.
 
 Parameters:
 
  - `rectangles`: Array of objects with properties `x`, `y`, `width`, and
    `height`.  Other properties are ignored, and missing properties are treated
-   as 0.  Can be an empty Array.
+   as 0.  Can be an empty Array, to make everything non-clickable.
 
    The area of the desktop represented by the union of the given rectangles
    become input-opaque (able to receive mouse events).  All other areas become
    input-transparent.
-
- - `callback(err, monitors)`: *optional* a function called when the request
-   completes:
-
-   - `err`: `null` if successful.  Otherwise, an `Error` object.
 
 Return:  `undefined`
 
@@ -181,34 +149,34 @@ Hudkit.setClickableAreas([
 ], err => console.error(err))
 ```
 
-#### Important notes
-
- - Each time this function is called, the total given area _replaces_ the
-   previous one.
+Notes:
 
  - If the Web Inspector is attached to the overlay window, the area it occupies
-   is automatically kept clickable, indepdendently of calls to this function.
+   is automatically kept clickable, independently of calls to this function.
 
- - When monitors are connected or disconnected, your clickable areas are reset,
-   because their positioning would be unpredictable.  Use
-   `Hudkit.on('monitors-changed', () => { ... })` to listen to monitor layout
-   changes and update your clickable areas accordingly!
+ - When monitors are connected or disconnected, your clickable areas are reset
+   to nothing being clickable, because their positioning would be
+   unpredictable.  Subscribe to the `'monitors-changed'` event
+   (`Hudkit.on('monitors-changed', () => { ... })`) and update your clickable
+   areas accordingly!
 
-### `Hudkit.showInspector([shouldAttachToWindow], [callback])`
+### `async Hudkit.showInspector([attached])`
+
+Opens the Web Inspector (also known as Developer Tools), for debugging the page
+loaded in the web view.
 
 Parameters:
 
- - `shouldAttachToWindow`: Boolean.  If `true`, starts the inspector attached
-   to the overlay window.  If `false`, start the inspector in its own window.
-   (Default: `false`.)
-
- - `callback(err)`: a function called when the request completes:
-
-   - `err`: `null` if successful.  Otherwise, an `Error` object.
+ - `attached`: Boolean.  If `true`, starts the inspector attached to the
+   overlay window.  If `false`, start the inspector in its own window.
+   (Optional.  Default: `false`.)
 
 Return:  `undefined`
 
-Shows the Web Inspector, also known as dev tools.
+:information\_source: You can also start the inspector with the `--inspect`
+flag.  That's usually better, because it works even if your JS crashes before
+calling this function.
+
 
 ## Install
 
@@ -237,11 +205,14 @@ Probably.  [Report them][new-issue].
 > Is it safe to direct Hudkit at some random untrusted web page on the
 > internet?
 
-No.  Hudkit is not a web browser.  The `window.Hudkit` object and other
-background stuff are exposed to every page Hudkit loads.  The API is not
-designed to resist attacks, and I might add stuff in the future that exposes
-even more unsafe things than it does now.  Please treat Hudkit like you'd treat
-a command line, only running stuff you trust.
+No.  Hudkit is built on a web browser engine, but is not intended for use as a
+general-purpose web browser.  The `window.Hudkit` object and other background
+stuff are exposed to every page Hudkit loads.  Although I've tried my best to
+mitigate possible attacks, the API simply is not designed to be exposed to the
+full badness of the wider internet.
+
+Please point Hudkit only at a locally hosted web pages, unless you really know
+what you're doing.
 
 > How can I ensure my HUD doesn't accidentally load remote resources?
 
@@ -250,16 +221,19 @@ Define a
 (CSP), like you'd do when developing any other web page.  Hudkit supports those
 through WebKit.
 
-Good starting point:  To allow requests to the same host your page was loaded
-from (your own computer), but block all requests to anywhere else, and also
-allow inline `<script>` and `<style>` tags, add this inside `<head>`:
+I recommend the following: Add this meta tag inside your document's `<head>`:
 
 ```html
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'">
 ```
 
-You can test it by e.g. adding a `<img src="http://example.com/">` tag to the
-page.  You'll see a log entry when it gets blocked:
+This makes that page only able to load resources from the same host it was
+loaded from (your local computer).  All requests to anywhere else are blocked.
+The `'unsafe-inline'` part allows inline `<script>` and `<style>` tags, which
+are innocuous if you're never loading remote resources anyway.
+
+You can test this by e.g. adding a `<img src="http://example.com/">` tag to
+your page.  You'll see a log entry like this when it gets blocked:
 
 ```
 CONSOLE SECURITY ERROR Refused to load http://example.com/ because it appears
@@ -300,6 +274,27 @@ has its own problems.
 
 You can send the Hudkit process a `SIGUSR1` signal to open the Web Inspector.
 For example, `killall hudkit --signal SIGUSR1`.
+
+> Why am I getting a `SyntaxError` when I try to `await` a Hudkit function?
+
+Probably because you're trying to use `await` at the top-level of your
+JavaScript file.  This wart in the JavaScript standard is unfortunate, and the
+wording of WebKit's error message for it even more so.
+
+The fix is to create an async function at the top-level, and immediately call
+it, doing all of your async stuff inside it:
+
+```js
+(async function () {
+  // You can use `await` here
+})()
+```
+
+This will improve in the near future:  There is a [TC39 proposal for top-level
+await](https://github.com/tc39/proposal-top-level-await), which is [backed by
+WebKit developers](https://github.com/whatwg/html/pull/4352), and
+[implementation is in
+progress](https://bugs.webkit.org/show_bug.cgi?id=202484).
 
 ## Related programs
 

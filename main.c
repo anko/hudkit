@@ -91,7 +91,8 @@ void call_js_callback(WebKitWebView *web_view, int callbackId, char *stringified
     // the web page's context.
 
     char buffer[sizeof(stringifiedData) + 1024];
-    snprintf(buffer, sizeof(buffer), "window.Hudkit._pendingCallbacks[%i](%s);\n\
+    snprintf(buffer, sizeof(buffer),
+            "window.Hudkit._pendingCallbacks[%i].resolve(%s);\n\
             delete window.Hudkit._pendingCallbacks[%i]",
             callbackId, stringifiedData, callbackId);
 
@@ -119,7 +120,7 @@ void on_js_call_get_monitor_layout(WebKitUserContentManager *manager,
 
     // TODO re-malloc buffer if data doesn't fit.  In case someone in the
     // future using this has a LOT of monitors.
-    char buffer[1024] = "null, [";
+    char buffer[1024] = "[";
     for (int i = 0; i < nRectangles; ++i) {
         // Escape the JS string contents escape, to prevent XSS via monitor
         // model string.  Yes, seriously.
@@ -239,7 +240,7 @@ void on_js_call_set_clickable_areas(WebKitUserContentManager *manager,
 
     realize_input_shape();
 
-    call_js_callback(web_view, callbackId, "null");
+    call_js_callback(web_view, callbackId, "");
 }
 void on_js_call_show_inspector(WebKitUserContentManager *manager,
         WebKitJavascriptResult *sentData,
@@ -254,7 +255,7 @@ void on_js_call_show_inspector(WebKitUserContentManager *manager,
             WEBKIT_WEB_VIEW(web_view));
     show_inspector(startAttached);
 
-    call_js_callback(web_view, callbackId, "null");
+    call_js_callback(web_view, callbackId, "");
 }
 
 
@@ -790,24 +791,27 @@ window.Hudkit = {\n\
       listenersForThisEvent.splice(listenersForThisEvent.indexOf(callback), 1)\n\
     }\n\
   },\n\
-  getMonitorLayout: function (callback) {\n\
-    const id = nextCallbackId++\n\
-    window.Hudkit._pendingCallbacks[id] = callback\n\
-    window.webkit.messageHandlers.getMonitorLayout.postMessage(id)\n\
+  getMonitorLayout: async function () {\n\
+    return new Promise((resolve, reject) => {\n\
+      const id = nextCallbackId++\n\
+      window.Hudkit._pendingCallbacks[id] = { resolve, reject }\n\
+      window.webkit.messageHandlers.getMonitorLayout.postMessage(id)\n\
+    })\n\
   },\n\
-  setClickableAreas: function (rectangles, callback) {\n\
-    callback = callback || (function () {})\n\
-    const id = nextCallbackId++\n\
-    window.Hudkit._pendingCallbacks[id] = callback\n\
-    window.webkit.messageHandlers.setClickableAreas.postMessage({id, rectangles})\n\
+  setClickableAreas: async function (rectangles) {\n\
+    return new Promise((resolve, reject) => {\n\
+      const id = nextCallbackId++\n\
+      window.Hudkit._pendingCallbacks[id] = { resolve, reject }\n\
+      window.webkit.messageHandlers.setClickableAreas.postMessage({id, rectangles})\n\
+    })\n\
   },\n\
-  showInspector: function (shouldAttachToWindow, callback) {\n\
-    if (shouldAttachToWindow === undefined) callback = shouldAttachToWindow\n\
-    callback = callback || (function () {})\n\
+  showInspector: async function (shouldAttachToWindow) {\n\
     shouldAttachToWindow = shouldAttachToWindow ? true : false\n\
-    const id = nextCallbackId++\n\
-    window.Hudkit._pendingCallbacks[id] = callback\n\
-    window.webkit.messageHandlers.showInspector.postMessage({id, shouldAttachToWindow})\n\
+    return new Promise((resolve, reject) => {\n\
+      const id = nextCallbackId++\n\
+      window.Hudkit._pendingCallbacks[id] = { resolve, reject }\n\
+      window.webkit.messageHandlers.showInspector.postMessage({id, shouldAttachToWindow})\n\
+    })\n\
   },\n\
 }\n\
 Object.defineProperty(window.Hudkit, '_pendingCallbacks', {\n\

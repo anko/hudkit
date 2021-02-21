@@ -42,17 +42,27 @@
     </div>
     <script>
 
-        //Hudkit.setClickableAreas([
-        //    { x: 0, y: 0, width: 100, height: 1200 }
-        //], e => console.log(e))
+        // Async wrapper necessary so we can use `await`
+        ;(async () => {
+            // Make the overlay window clickable in a 100-pixel-wide strip at
+            // the left of your leftmost monitor.
+            await Hudkit.setClickableAreas([
+                { x: 0, y: 0, width: 100, height: 1200 }
+            ])
 
-        const showMonitorFrames = () => {
-            Hudkit.getMonitorLayout((e, monitors) => {
+            async function showMonitorFrames() {
+                // At the location of each monitor, show obvious blue frames
+                // with red borders, and the monitor's name.
+
                 let container = document.getElementById('monitor-frame-container')
                 // Clear container
                 for (let i = container.children.length; i > 0; --i) {
                     container.removeChild(container.children[0])
                 }
+
+                const monitors = await Hudkit.getMonitorLayout()
+
+                console.log(JSON.stringify(monitors, null, 2))
 
                 monitors.forEach((monitor, monitorIndex) => {
 
@@ -75,11 +85,13 @@
                     labelDiv.appendChild(label)
                     monitorFrame.appendChild(labelDiv)
                 })
-            })
-        }
-        showMonitorFrames()
-        Hudkit.on('monitors-changed', showMonitorFrames)
+            }
 
+            // Show initially
+            await showMonitorFrames()
+            // Update the display whenever the monitor layout changes
+            Hudkit.on('monitors-changed', showMonitorFrames)
+        })()
     </script>
 </body>
 </html>
