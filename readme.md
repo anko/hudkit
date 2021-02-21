@@ -167,9 +167,9 @@ loaded in the web view.
 
 Parameters:
 
- - `attach`: Boolean.  If `true`, starts the inspector attached to the overlay
-   window.  If `false`, start the inspector in its own window.  (Default:
-   `false`.)
+ - `attached`: Boolean.  If `true`, starts the inspector attached to the
+   overlay window.  If `false`, start the inspector in its own window.
+   (Optional.  Default: `false`.)
 
 Return:  `undefined`
 
