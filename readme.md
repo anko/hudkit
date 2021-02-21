@@ -97,7 +97,7 @@ monitors' device names and dimensions.
 Example:
 
 ```js
-await Hudkit.getMonitorLayout()
+const monitors = await Hudkit.getMonitorLayout()
 
 monitors.forEach((m) => {
   console.log(`${m.name} pos:${m.x},${m.y} size:${m.width},${m.height}`)
