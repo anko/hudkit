@@ -184,17 +184,32 @@ In the root directory of this project,
 
     make
 
+If you're missing any dependencies, the error should tell you which.
+
 ### Dependencies
 
-You'll need *GTK 3*, and a corresponding *webkit2gtk*.
+You'll need—
 
-On [Arch][arch], the packages are called `gtk3` and `webkit2gtk`.
+- Standard *C compilation tools*: `make`, `pkg-config`, and any C compiler of
+  your choice (`gcc` or `clang`, probably).
 
-On [Void][void], they are `gtk+3-devel` and `webkit2gtk-devel`.
+  Any Linux distro has these; many have them installed by default.  If not,
+  consult your distro's documentation on how to install them.  (Many distros
+  have a single package containing all the C tools, for convenience, like
+  [Arch][arch]'s [`base-devel`
+  package](https://archlinux.org/groups/x86_64/base-devel/).)
 
-On [Ubuntu][ubuntu], they are `libgtk-3-dev` and `libwebkit2gtk-4.0-devel`.
+- *GTK 3*, and a corresponding *webkit2gtk*.
 
-If you build on another distro, I'm interested in how it went.
+  On [Arch][arch], the packages are called `gtk3` and `webkit2gtk`.
+
+  On [Void][void], they are `gtk+3-devel` and `webkit2gtk-devel`.
+
+  On [Ubuntu][ubuntu], they are `libgtk-3-dev` and `libwebkit2gtk-4.0-devel`.
+
+  On [Mint][mint], they are `libgtk-3-dev` and `libwebkit2gtk-4.0`.
+
+  If you build on another distro, I'm interested in how it went.
 
 ## Bugs
 
@@ -336,6 +351,7 @@ progress](https://bugs.webkit.org/show_bug.cgi?id=202484).
 
 
 [arch]: https://www.archlinux.org/
+[mint]: https://linuxmint.com/
 [compton]: https://github.com/chjj/compton
 [picom]: https://github.com/yshui/picom
 [d3]: https://d3js.org/
