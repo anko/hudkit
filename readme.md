@@ -351,14 +351,14 @@ progress](https://bugs.webkit.org/show_bug.cgi?id=202484).
 
 
 [arch]: https://www.archlinux.org/
-[mint]: https://linuxmint.com/
 [compton]: https://github.com/chjj/compton
-[picom]: https://github.com/yshui/picom
 [d3]: https://d3js.org/
 [dnode]: https://github.com/substack/dnode
 [electron]: https://electronjs.org/
 [electron_ignoremouse]: https://electronjs.org/docs/api/browser-window#winsetignoremouseeventsignore-options
+[mint]: https://linuxmint.com/
 [new-issue]: https://github.com/anko/hudkit/issues/new
+[picom]: https://github.com/yshui/picom
 [pscircle]: https://gitlab.com/mildlyparallel/pscircle
 [sockjs]: https://github.com/sockjs/sockjs-client
 [twitch]: https://www.twitch.tv/
@@ -366,5 +366,5 @@ progress](https://bugs.webkit.org/show_bug.cgi?id=202484).
 [void]: https://voidlinux.org/
 [webkit]: https://www.webkit.org/
 [wiki-hud]: http://en.wikipedia.org/wiki/Head-up_display
-[xkbcat]: https://github.com/anko/xkbcat
 [wk-settings]: https://webkitgtk.org/reference/webkit2gtk/stable/WebKitSettings.html
+[xkbcat]: https://github.com/anko/xkbcat
