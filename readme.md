@@ -16,7 +16,9 @@ using a fullscreen transparent web view for.
  - Small executable.  Uses native GTK and WebKit libraries.
  - Supports modern web APIs like WebSockets, WebAudio, WebGL, etc.
 
-Platforms:&emsp;:heavy\_check\_mark: Linux (X11)&emsp;:grey\_question: OS X&emsp;:no\_entry\_sign: ~~Linux (Wayland)~~&emsp;:no\_entry\_sign: ~~Windows~~
+Platforms: &emsp;:heavy\_check\_mark: Linux (X11) &emsp;:no\_entry\_sign:
+~~Linux (Wayland)~~ &emsp;:no\_entry\_sign: ~~Windows~~ &emsp;:no\_entry\_sign:
+~~OS X~~ (but see https://github.com/progrium/topframe!)
 
 ## Quick start
 
