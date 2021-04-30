@@ -40,6 +40,7 @@ body { background: rgba(255,255,255,0.5) }
 console.log("what")
 ;(async () => {
   console.log(JSON.stringify(await Hudkit.getMonitorLayout()))
+  console.log(JSON.stringify({ userAgent: navigator.userAgent }))
 })()
 </script>
 </html>
@@ -49,7 +50,7 @@ cat "$tmpfile_html"
 echo '- - -'
 
 echo "Starting Hudkit"
-./hudkit "file://$tmpfile_html" > "$tmpfile_output" 2>&1 & hudkit_pid=$!
+./hudkit --webkit-settings user-agent=test_ua "file://$tmpfile_html" > "$tmpfile_output" 2>&1 & hudkit_pid=$!
 # We have to redirect stderr to stdout (2>&1), because webkit's
 # 'enable-write-console-messages-to-stdout' setting is a lie; it actually logs
 # to stderr.
@@ -95,6 +96,18 @@ if grep --quiet --fixed-strings "$expected_to_contain" "$tmpfile_output"; then
     echo "Saw Hudkit.getMonitorLayout() response in log!  OK."
 else
     echo "Did not see Hudkit.getMonitorLayout() response in log!"
+    exit_code=1
+fi
+
+expected_to_contain=$(cat <<END
+CONSOLE LOG {"userAgent":"test_ua"}
+END
+)
+
+if grep --quiet --fixed-strings "$expected_to_contain" "$tmpfile_output"; then
+    echo "Saw user agent set by --webkit-settings in log!  OK."
+else
+    echo "Did not see user agent set by --webkit-settings in log!"
     exit_code=1
 fi
 echo '- - -'

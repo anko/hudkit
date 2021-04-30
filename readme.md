@@ -55,29 +55,23 @@ USAGE: ./hudkit <URL> [--help] [--webkit-settings option1=value1,...]
     --inspect
         Open the Web Inspector (dev tools) on start.
 
-    --webkit-settings
-        Followed by comma-separated setting names to pass to the WebKit web
-        view.  Which settings are available depends on what version of WebKit
-        this program was compiled against.  See a list of ones supported on
-        your system by passing '--webkit-settings help'.
+    --webkit-settings <settings>
+        The <settings> should be a comma-separated list of settings.
 
-        For details of what the options do, see the list at
+        Boolean settings can look like
+            option-name
+            option-name=TRUE
+            option-name=FALSE
+
+        String, integer, and enum options look like
+            option-name=foo
+            option-name=42
+
+        To see settings available on your system's WebKit version, their
+        valid values, and default values, pass '--webkit-settings help'.
+
+        To see explanations of the settings, see
         https://webkitgtk.org/reference/webkit2gtk/stable/WebKitSettings.html
-        Pass setting names as underscore_separated_words.
-
-        Default settings are the same as WebKit's defaults, plus these two:
-         - enable_write_console_messages_to_stdout
-         - enable_developer_extras
-
-        Boolean options can look like
-            option_name
-            option_name=TRUE
-            option_name=FALSE
-        String and integer options can look like
-            option_name=foo
-            option_name=42
-        The enum option hardware_acceleration_policy has these valid values
-            ON_DEMAND, ALWAYS, NEVER
 
     --help
         Print this help text, then exit.

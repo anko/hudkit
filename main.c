@@ -345,29 +345,23 @@ USAGE: %s <URL> [--help] [--webkit-settings option1=value1,...]\n\
     --inspect\n\
         Open the Web Inspector (dev tools) on start.\n\
 \n\
-    --webkit-settings\n\
-        Followed by comma-separated setting names to pass to the WebKit web\n\
-        view.  Which settings are available depends on what version of WebKit\n\
-        this program was compiled against.  See a list of ones supported on\n\
-        your system by passing '--webkit-settings help'.\n\
+    --webkit-settings <settings>\n\
+        The <settings> should be a comma-separated list of settings.\n\
 \n\
-        For details of what the options do, see the list at\n\
+        Boolean settings can look like\n\
+            option-name\n\
+            option-name=TRUE\n\
+            option-name=FALSE\n\
+\n\
+        String, integer, and enum options look like\n\
+            option-name=foo\n\
+            option-name=42\n\
+\n\
+        To see settings available on your system's WebKit version, their\n\
+        valid values, and default values, pass '--webkit-settings help'.\n\
+\n\
+        To see explanations of the settings, see\n\
         https://webkitgtk.org/reference/webkit2gtk/stable/WebKitSettings.html\n\
-        Pass setting names as underscore_separated_words.\n\
-\n\
-        Default settings are the same as WebKit's defaults, plus these two:\n\
-         - enable_write_console_messages_to_stdout\n\
-         - enable_developer_extras\n\
-\n\
-        Boolean options can look like\n\
-            option_name\n\
-            option_name=TRUE\n\
-            option_name=FALSE\n\
-        String and integer options can look like\n\
-            option_name=foo\n\
-            option_name=42\n\
-        The enum option hardware_acceleration_policy has these valid values\n\
-            ON_DEMAND, ALWAYS, NEVER\n\
 \n\
     --help\n\
         Print this help text, then exit.\n\
@@ -402,6 +396,19 @@ int main(int argc, char **argv) {
         if      (!strcmp(argv[i], "--help")) { printUsage(argv[0]); exit(0); }
         else if (!strcmp(argv[i], "--inspect")) open_inspector_immediately = TRUE;
         else if (!strcmp(argv[i], "--webkit-settings")) {
+
+            // Fetch all the WebKitSettings object's properties, so we can
+            // check whether the following argument contains keys and values
+            // that exist in it.  It derives from GObject, so we can use GLib's
+            // facilities to operate on its contents generically.
+            //
+            // This insulates us from changes in what settings are supported,
+            // whether due to upstream WebKit developers adding or removing
+            // them, or distros or users building libwebkit in some custom way.
+            guint n_setting_properties;
+            GParamSpec **setting_properties = g_object_class_list_properties(
+                    G_OBJECT_GET_CLASS(wk_settings), &n_setting_properties);
+
             ++i;
             char *comma_separated_entries = argv[i];
             // `comma_separated_entries` should look something like
@@ -439,181 +446,165 @@ int main(int argc, char **argv) {
                 char *key = strtok(entry, "=");
                 char *value = strtok(NULL, "=");
 
-                // If we get the special key "help", we should only print the
-                // available options, and exit.
-                bool help_mode = !strcmp(key, "help");
+                // If we get the special key "help", print the available WebKit
+                // settings and their value types, and exit.
+                if (!strcmp(key, "help")) {
+                    printf("Available values for --webkit-settings (default in parentheses):\n");
+                    for (int i = 0; i < n_setting_properties; ++i) {
+                        GParamSpec *prop = setting_properties[i];
+                        GType type = prop->value_type;
 
-                // Unfortunately, no function exists to set a WebKit setting
-                // generically, by its string name.  Instead, there is a
-                // separate setter function for each setting name.
-                //
-                // So we'll generate them using macros.
+                        printf(" • ");
+                        printf(prop->name);
 
-                #define BOOLEAN_SETTING(SETTING_NAME) \
-                if (help_mode) printf(#SETTING_NAME "\n");\
-                else if (!strcmp(key, #SETTING_NAME)) {\
-                    bool actual_value = TRUE;\
-                    if (value == NULL) actual_value = TRUE;\
-                    else if (!strcmp(value, "TRUE")) actual_value = TRUE;\
-                    else if (!strcmp(value, "FALSE")) actual_value = FALSE;\
-                    else {\
-                        fprintf(stderr,\
-                                "Invalid value for %s: %s ", key, value);\
-                        fprintf(stderr, "(expected TRUE or FALSE)\n");\
-                        exit(3);\
-                    }\
-                    webkit_settings_set_ ## SETTING_NAME (\
-                            wk_settings, actual_value);\
-                    continue;\
-                }
+                        if (g_type_is_a(type, G_TYPE_BOOLEAN)) {
+                            bool v;
+                            g_object_get(wk_settings, prop->name, &v, NULL);
+                            printf(" (%s)", v ? "TRUE" : "FALSE");
+                        } else if (g_type_is_a(type, G_TYPE_UINT)) {
+                            printf("=<integer>");
+                            guint v;
+                            g_object_get(wk_settings, prop->name, &v, NULL);
+                            printf(" (%d)", v);
+                        }
+                        else if (g_type_is_a(type, G_TYPE_STRING)) {
+                            printf("=<string>");
+                            char *v;
+                            g_object_get(wk_settings, prop->name, &v, NULL);
+                            printf(" ('%s')", v == NULL ? "" : v);
+                            g_free(v);
+                        } else if (g_type_is_a(type, G_TYPE_ENUM)) {
+                            printf("=");
+                            GEnumClass *enum_class = (GEnumClass *)
+                                g_type_class_ref(type);
+                            for (int j = 0; j < enum_class->n_values; ++j) {
+                                GEnumValue enum_value = enum_class->values[j];
+                                printf(enum_value.value_nick);
+                                if (j < enum_class->n_values - 1) printf("|");
+                            }
+                            gint v;
+                            g_object_get(wk_settings, prop->name, &v, NULL);
+                            printf(" (%s)",
+                                    g_enum_get_value(enum_class, v)->value_nick);
+                        } else printf(g_type_name(type));
 
-                BOOLEAN_SETTING(enable_developer_extras);
-#if WEBKIT_MINOR_VERSION >= 10
-                BOOLEAN_SETTING(allow_file_access_from_file_urls);
-#endif
-                BOOLEAN_SETTING(allow_modal_dialogs);
-#if WEBKIT_MINOR_VERSION >= 28
-                BOOLEAN_SETTING(allow_top_navigation_to_data_urls);
-#endif
-#if WEBKIT_MINOR_VERSION >= 14
-                BOOLEAN_SETTING(allow_universal_access_from_file_urls);
-#endif
-                BOOLEAN_SETTING(auto_load_images);
-                BOOLEAN_SETTING(draw_compositing_indicators);
-#if WEBKIT_MINOR_VERSION >= 2
-                BOOLEAN_SETTING(enable_accelerated_2d_canvas);
-#endif
-#if WEBKIT_MINOR_VERSION >= 24
-                BOOLEAN_SETTING(enable_back_forward_navigation_gestures);
-#endif
-                BOOLEAN_SETTING(enable_caret_browsing);
-                BOOLEAN_SETTING(enable_developer_extras);
-                BOOLEAN_SETTING(enable_dns_prefetching);
-#if WEBKIT_MINOR_VERSION >= 20
-                BOOLEAN_SETTING(enable_encrypted_media);
-#endif
-                BOOLEAN_SETTING(enable_frame_flattening);
-                BOOLEAN_SETTING(enable_fullscreen);
-                BOOLEAN_SETTING(enable_html5_database);
-                BOOLEAN_SETTING(enable_html5_local_storage);
-                BOOLEAN_SETTING(enable_hyperlink_auditing);
-                BOOLEAN_SETTING(enable_java);
-                BOOLEAN_SETTING(enable_javascript);
-#if WEBKIT_MINOR_VERSION >= 24
-                BOOLEAN_SETTING(enable_javascript_markup);
-#endif
-#if WEBKIT_MINOR_VERSION >= 26
-                BOOLEAN_SETTING(enable_media);
-#endif
-#if WEBKIT_MINOR_VERSION >= 22
-                BOOLEAN_SETTING(enable_media_capabilities);
-#endif
-#if WEBKIT_MINOR_VERSION >= 4
-                BOOLEAN_SETTING(enable_media_stream);
-                BOOLEAN_SETTING(enable_mediasource);
-#endif
-#if WEBKIT_MINOR_VERSION >= 24
-                BOOLEAN_SETTING(enable_mock_capture_devices);
-#endif
-                BOOLEAN_SETTING(enable_offline_web_application_cache);
-                BOOLEAN_SETTING(enable_page_cache);
-                BOOLEAN_SETTING(enable_plugins);
-                // Deprecated.
-                //BOOLEAN_SETTING(enable_private_browsing);
-                BOOLEAN_SETTING(enable_resizable_text_areas);
-                BOOLEAN_SETTING(enable_site_specific_quirks);
-                BOOLEAN_SETTING(enable_smooth_scrolling);
-#if WEBKIT_MINOR_VERSION >= 4
-                BOOLEAN_SETTING(enable_spatial_navigation);
-#endif
-                BOOLEAN_SETTING(enable_tabs_to_links);
-                BOOLEAN_SETTING(enable_webaudio);
-                BOOLEAN_SETTING(enable_webgl);
-#if WEBKIT_MINOR_VERSION >= 2
-                BOOLEAN_SETTING(enable_write_console_messages_to_stdout);
-#endif
-                BOOLEAN_SETTING(enable_xss_auditor);
-                BOOLEAN_SETTING(javascript_can_access_clipboard);
-                BOOLEAN_SETTING(javascript_can_open_windows_automatically);
-                BOOLEAN_SETTING(load_icons_ignoring_image_load_setting);
-                BOOLEAN_SETTING(media_playback_allows_inline);
-                BOOLEAN_SETTING(media_playback_requires_user_gesture);
-                BOOLEAN_SETTING(print_backgrounds);
-                BOOLEAN_SETTING(zoom_text_only);
+                        if (prop->flags & G_PARAM_DEPRECATED)
+                            printf( " [⚠ DEPRECATED]");
 
-                #define STRING_SETTING(SETTING_NAME) \
-                if (help_mode) printf(#SETTING_NAME "\n");\
-                else if (!strcmp(key, #SETTING_NAME)) {\
-                    webkit_settings_set_ ## SETTING_NAME (\
-                            wk_settings, value);\
-                    continue;\
-                }
-
-                STRING_SETTING(cursive_font_family);
-                STRING_SETTING(default_charset);
-                STRING_SETTING(default_font_family);
-                STRING_SETTING(fantasy_font_family);
-#if WEBKIT_MINOR_VERSION >= 30
-                STRING_SETTING(media_content_types_requiring_hardware_support);
-#endif
-                STRING_SETTING(monospace_font_family);
-                STRING_SETTING(pictograph_font_family);
-                STRING_SETTING(sans_serif_font_family);
-                STRING_SETTING(serif_font_family);
-                STRING_SETTING(user_agent);
-
-                // TODO exit(3) when can't parse int, instead of continuing
-                #define INT_SETTING(SETTING_NAME) \
-                if (help_mode) printf(#SETTING_NAME "\n");\
-                else if (!strcmp(key, #SETTING_NAME)) {\
-                    int actual_value = strtoimax(value, NULL, 10);\
-                    webkit_settings_set_ ## SETTING_NAME (\
-                            wk_settings, actual_value);\
-                    continue;\
-                }
-
-                INT_SETTING(default_font_size);
-                INT_SETTING(default_monospace_font_size);
-                INT_SETTING(minimum_font_size);
-
-#if WEBKIT_MINOR_VERSION >= 16
-                // This one setting takes a named constant, so we'll look up
-                // the right one.
-
-                if (help_mode) printf("hardware_acceleration_policy\n");
-                else if (!strcmp(key, "hardware_acceleration_policy")) {
-                    if (strcmp(value, "ON_DEMAND")) {
-                        webkit_settings_set_hardware_acceleration_policy(
-                                wk_settings,
-                                WEBKIT_HARDWARE_ACCELERATION_POLICY_ON_DEMAND);
-                    } else if (strcmp(value, "ALWAYS")) {
-                        webkit_settings_set_hardware_acceleration_policy(
-                                wk_settings,
-                                WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS);
-                    } else if (strcmp(value, "NEVER")) {
-                        webkit_settings_set_hardware_acceleration_policy(
-                                wk_settings,
-                                WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
-                    } else {
-                        fprintf(stderr,
-                                "Invalid '%s' setting value '%s'.\n",
-                                key, value);
-                        fprintf(stderr,
-                                "Valid options: ON_DEMAND, ALWAYS, NEVER");
-                        exit(3);
+                        printf("\n");
                     }
-                    continue;
+                    exit(0);
                 }
-#endif
 
-                if (help_mode) exit(0);
+                for (int i = 0; i < n_setting_properties; ++i) {
+                    GParamSpec *setting_property = setting_properties[i];
 
-                // If we get this far, the option name must be something we
-                // don't recognise.
-                fprintf(stderr,
-                        "Unknown WebKit setting '%s'.\n", key);
+                    // Skip non-matching entries.
+                    if (strcmp(setting_property->name, key)) continue;
+
+                    // Parse the option according to what the GObject type of
+                    // that settings property is.
+                    //
+                    // We use GObject metadata stuff to ease maintenance load,
+                    // so when upstream WebKit changes things, we don't have to
+                    // be updating a big hardcoded list of settings.
+
+                    // Boolean settings can be 'key', 'key=TRUE' or 'key=FALSE'
+                    if (g_type_is_a(
+                                setting_property->value_type,
+                                G_TYPE_BOOLEAN)) {
+                        bool actual_value;
+                        if (value == NULL) actual_value = TRUE;
+                        else if (!strcmp(value, "TRUE")) actual_value = TRUE;
+                        else if (!strcmp(value, "FALSE")) actual_value = FALSE;
+                        else {
+                            fprintf(stderr,
+                                    "Invalid value for %s: %s ", key, value);
+                            fprintf(stderr, "(expected TRUE or FALSE)\n");
+                            exit(3);
+                        }
+                        g_object_set(wk_settings,
+                                setting_property->name, actual_value,
+                                NULL);
+                        goto next;
+
+                    // String settings must be 'key=value', and we can directly
+                    // use the value string.
+                    } else if (g_type_is_a(setting_property->value_type,
+                                G_TYPE_STRING)) {
+                        g_object_set(wk_settings,
+                                setting_property->name, value,
+                                NULL);
+                        goto next;
+
+                    // Unsigned integer settings must be 'key=value', but we
+                    // have to parse the value string into an integer first.
+                    } else if (g_type_is_a(setting_property->value_type,
+                                G_TYPE_UINT)) {
+                        guint32 actual_value = strtoimax(value, NULL, 10);
+                        g_object_set(wk_settings,
+                                setting_property->name, actual_value,
+                                NULL);
+                        goto next;
+
+                    // Enumeration settings must be 'key=value', but the value
+                    // string must be an allowed option for that enum.
+                    } else if (g_type_is_a(setting_property->value_type,
+                                G_TYPE_ENUM)) {
+
+                        // Convert the GTypeClass of the property to an
+                        // GEnumClass, so we can have a look through its
+                        // allowed values.
+                        GEnumClass *enum_class = (GEnumClass *)
+                            g_type_class_ref(setting_property->value_type);
+                        bool is_valid = false;
+                        for (int j = 0; j < enum_class->n_values; ++j) {
+                            GEnumValue enum_value = enum_class->values[j];
+                            //printf("Allowed enum value: %s\n", enum_value.value_nick);
+                            if (!strcmp(enum_value.value_nick, value)) {
+                                is_valid = true;
+                                break;
+                            }
+                        }
+
+                        if (is_valid) {
+                            gint actual_value =
+                                g_enum_get_value_by_nick(enum_class, value)
+                                ->value;
+                            g_object_set(wk_settings, key, actual_value, NULL);
+
+                        } else {
+                            fprintf(stderr,
+                                    "Invalid WebKit setting '%s=%s'\n",
+                                    key, value);
+                            fprintf(stderr, "Allowed values for '%s':\n", key);
+                            for (int j = 0; j < enum_class->n_values; ++j) {
+                                GEnumValue enum_value = enum_class->values[j];
+                                printf("- %s\n", enum_value.value_nick);
+                            }
+                            exit(5);
+                        }
+
+                        g_type_class_unref(enum_class);
+                        goto next;
+
+                    } else {
+                        fprintf(stderr, "Cannot parse value for setting '%s':\n",
+                                setting_property->name);
+                        printf("    The setting exists, but we have no parser for its type '%s'.\n",
+                                g_type_name(setting_property->value_type));
+
+                        exit(4);
+                    }
+                }
+
+                fprintf(stderr, "No such webkit setting: %s\n", key);
                 exit(3);
+
+next:
+                continue;
             }
+            free(setting_properties);
         }
         else {
             // Handle positional arguments.  Should be only 1: the target URL.
