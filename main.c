@@ -457,7 +457,7 @@ int main(int argc, char **argv) {
                         GType type = prop->value_type;
 
                         printf(" • ");
-                        printf(prop->name);
+                        printf("%s", prop->name);
 
                         if (g_type_is_a(type, G_TYPE_BOOLEAN)) {
                             bool v;
@@ -481,14 +481,14 @@ int main(int argc, char **argv) {
                                 g_type_class_ref(type);
                             for (int j = 0; j < enum_class->n_values; ++j) {
                                 GEnumValue enum_value = enum_class->values[j];
-                                printf(enum_value.value_nick);
+                                printf("%s", enum_value.value_nick);
                                 if (j < enum_class->n_values - 1) printf("|");
                             }
                             gint v;
                             g_object_get(wk_settings, prop->name, &v, NULL);
                             printf(" (%s)",
                                     g_enum_get_value(enum_class, v)->value_nick);
-                        } else printf(g_type_name(type));
+                        } else printf("%s", g_type_name(type));
 
                         if (prop->flags & G_PARAM_DEPRECATED)
                             printf( " [⚠ DEPRECATED]");
