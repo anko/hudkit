@@ -92,14 +92,16 @@ void call_js_callback(WebKitWebView *web_view, int callbackId, char *stringified
     // Ensure `stringifiedData` is sanitised!  It will basically be `eval`ed in
     // the web page's context.
 
-    char buffer[sizeof(stringifiedData) + 1024];
-    snprintf(buffer, sizeof(buffer),
-            "window.Hudkit._pendingCallbacks[%i].resolve(%s);\n\
-            delete window.Hudkit._pendingCallbacks[%i]",
+    GString *response_buffer = g_string_new(NULL);
+    g_string_append_printf(response_buffer,
+            "window.Hudkit._pendingCallbacks[%i].resolve(%s)"
+            "\ndelete window.Hudkit._pendingCallbacks[%i]",
             callbackId, stringifiedData, callbackId);
 
+    char *finished_buffer = g_string_free(response_buffer, FALSE);
     webkit_web_view_run_javascript(
-            web_view, buffer, NULL, on_js_call_finished, NULL);
+            web_view, finished_buffer, NULL, on_js_call_finished, NULL);
+    g_free(finished_buffer);
 }
 
 void on_js_call_get_monitor_layout(WebKitUserContentManager *manager,
@@ -908,17 +910,22 @@ void call_js_listeners(WebKitWebView *web_view, char *eventName, char *stringifi
     // Ensure `stringifiedData` is sanitised!  It will basically be `eval`ed in
     // the web page's context.
 
-    char buffer[sizeof(stringifiedData) + 1024];
-    snprintf(buffer, sizeof(buffer), "\
-(() => { // IIFE\n\
-  const listenersForEvent = window.Hudkit._listeners.get('%s');\n\
-  if (listenersForEvent) {\n\
-    listenersForEvent.forEach(listener => listener(%s))\n\
-  }\n\
-})()", eventName, stringifiedData);
+    GString *response_buffer = g_string_new(NULL);
+    g_string_append_printf(response_buffer,
+            "\n(() => { // IIFE"
+            "\n  const listenersForEvent = window.Hudkit._listeners.get('%s')"
+            "\n  if (listenersForEvent) {"
+            "\n    listenersForEvent.forEach(f => f(%s))"
+            "\n  }"
+            "\n})()",
+            eventName,
+            stringifiedData);
 
+    char *finished_buffer = g_string_free(response_buffer, FALSE);
+    printf("%s\n", finished_buffer);
     webkit_web_view_run_javascript(
-            web_view, buffer, NULL, on_js_call_finished, NULL);
+            web_view, finished_buffer, NULL, on_js_call_finished, NULL);
+    g_free(finished_buffer);
 }
 
 
