@@ -113,6 +113,20 @@ Currently listenable events:
    No arguments are passed to the `listener`.  Call `Hudkit.getMonitorLayout`
    to get the updated layout.
 
+ - `composited-changed`: fired when the ability of your desktop environment to
+   render transparency changes; typically when your compositor is killed or
+   restarted.
+
+   The main reason this exists is so if you accidentally kill your compositor,
+   you won't be stuck with the now fully opaque overlay window blocking your
+   whole desktop, as long as your page listens for this event and calls
+   `window.close()` in response.
+
+   Arguments passed to listener:
+
+   - `haveTransparency` (Boolean).  True if compositing is now supported, false
+     otherwise.
+
 ### `Hudkit.off(eventName, listener)`
 
 De-registers the given `listener` from the given `eventName`, so it will no
@@ -173,6 +187,10 @@ Return:  `undefined`
 flag.  That's usually better, because it works even if your JS crashes before
 calling this function.
 
+### Other Web APIs that work specially
+
+ - [`window.close`](https://developer.mozilla.org/en-US/docs/Web/API/Window/close)
+   exits Hudkit.
 
 ## Install
 

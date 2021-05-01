@@ -91,6 +91,12 @@
             await showMonitorFrames()
             // Update the display whenever the monitor layout changes
             Hudkit.on('monitors-changed', showMonitorFrames)
+            Hudkit.on('composited-changed', haveTransparency => {
+                if (!haveTransparency) {
+                    console.log("Lost transparency support!  Closing.")
+                    window.close()
+                }
+            })
         })()
     </script>
 </body>

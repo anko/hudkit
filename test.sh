@@ -41,6 +41,8 @@ console.log("what")
 ;(async () => {
   console.log(JSON.stringify(await Hudkit.getMonitorLayout()))
   console.log(JSON.stringify({ userAgent: navigator.userAgent }))
+  Hudkit.on("composited-changed", hasTransparency =>
+    console.log(`hasTransparency ${hasTransparency}`))
 })()
 </script>
 </html>
@@ -62,12 +64,14 @@ out=$(xwd -root -silent | convert xwd:- -depth 8 -crop "1x1+0+0" txt:- | grep -o
 echo "Pixel value at (0,0): $out"
 echo '- - -'
 
-echo "Killing hudkit"
-kill "$hudkit_pid"
-wait "$hudkit_pid"
+# Deliberaretely killing the compositor first, to fire the composited-changed
+# listener in JS, so we can test for that.
 echo "Killing compton"
 kill "$compositor_pid"
 wait "$compositor_pid"
+echo "Killing hudkit"
+kill "$hudkit_pid"
+wait "$hudkit_pid"
 echo "Killing Xvfb"
 kill "$xvfb_pid"
 wait "$xvfb_pid"
@@ -91,7 +95,6 @@ expected_to_contain=$(cat <<END
 CONSOLE LOG [{"name":"screen","x":0,"y":0,"width":1280,"height":1024}]
 END
 )
-
 if grep --quiet --fixed-strings "$expected_to_contain" "$tmpfile_output"; then
     echo "Saw Hudkit.getMonitorLayout() response in log!  OK."
 else
@@ -103,11 +106,21 @@ expected_to_contain=$(cat <<END
 CONSOLE LOG {"userAgent":"test_ua"}
 END
 )
-
 if grep --quiet --fixed-strings "$expected_to_contain" "$tmpfile_output"; then
     echo "Saw user agent set by --webkit-settings in log!  OK."
 else
     echo "Did not see user agent set by --webkit-settings in log!"
+    exit_code=1
+fi
+
+expected_to_contain=$(cat <<END
+CONSOLE LOG hasTransparency false
+END
+)
+if grep --quiet --fixed-strings "$expected_to_contain" "$tmpfile_output"; then
+    echo "Saw output from 'composited-changed' listener in log!  OK."
+else
+    echo "Did not see output from 'composited-changed' listener in log!"
     exit_code=1
 fi
 echo '- - -'

@@ -29,6 +29,8 @@ void on_signal_sigusr1(int signal_number) {
 
 static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
         gpointer user_data);
+static void composited_changed(GdkScreen *screen, gpointer user_data);
+static void on_close_web_view(WebKitWebView *web_view, gpointer user_data);
 
 static int get_monitor_rects(GdkDisplay *display, GdkRectangle **rectangles) {
     int n = gdk_display_get_n_monitors(display);
@@ -650,6 +652,14 @@ next:
     // Set up a callback to react to screen changes
     g_signal_connect(window, "screen-changed",
             G_CALLBACK(screen_changed), web_view);
+    // Set up a callback to react to screen compositing changes
+    g_signal_connect(window, "composited-changed",
+            G_CALLBACK(composited_changed), web_view);
+
+    // Set up a callback to react to window.close() being called from JS within
+    // the WebView
+    g_signal_connect(web_view, "close",
+            G_CALLBACK(on_close_web_view), wk_context);
 
     // Use the webview settings we parsed out of argv earlier
     webkit_web_view_set_settings(web_view, wk_settings);
@@ -917,6 +927,7 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
     if (!gdk_screen_is_composited(screen)) {
         fprintf(stderr, "Your screen does not support transparency.\n");
         fprintf(stderr, "Maybe your compositor isn't running?\n");
+        gtk_widget_destroy(widget);
         exit(69); // memes
     }
 
@@ -931,4 +942,19 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
             G_CALLBACK(on_monitors_changed), web_view);
 
     size_to_screen(GTK_WINDOW(widget));
+}
+
+// This callback runs when JavaScript on the page calls window.close()
+static void on_close_web_view(WebKitWebView *web_view, gpointer user_data) {
+    gtk_widget_destroy(GTK_WIDGET(web_view));
+    exit(0);
+}
+
+// This callback runs when the screen's composited status changes.  That is,
+// the screen's ability to render transparency.
+static void composited_changed(GdkScreen *s, gpointer user_data) {
+    WebKitWebView *web_view = (WebKitWebView *)user_data;
+    GdkScreen *screen = gtk_widget_get_screen(GTK_WIDGET(web_view));
+    call_js_listeners(web_view, "composited-changed",
+            gdk_screen_is_composited(screen) ? "true" : "false");
 }
