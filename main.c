@@ -120,9 +120,7 @@ void on_js_call_get_monitor_layout(WebKitUserContentManager *manager,
         monitors[i] = gdk_display_get_monitor(display, i);
     }
 
-    // TODO re-malloc buffer if data doesn't fit.  In case someone in the
-    // future using this has a LOT of monitors.
-    char buffer[1024] = "[";
+    GString *response_buffer = g_string_new("[");
     for (int i = 0; i < nRectangles; ++i) {
         // Escape the JS string contents escape, to prevent XSS via monitor
         // model string.  Yes, seriously.
@@ -196,15 +194,18 @@ void on_js_call_get_monitor_layout(WebKitUserContentManager *manager,
         memset(end_pointer, '\0', 1); // Terminate string
 
         GdkRectangle rect = rectangles[i];
-        snprintf(
-                buffer + strlen(buffer),
-                sizeof(buffer),
+        g_string_append_printf(response_buffer,
                 "{name:'%s',x:%i,y:%i,width:%i,height:%i},",
-                escaped_monitor_model_string, rect.x, rect.y, rect.width, rect.height);
+                escaped_monitor_model_string,
+                rect.x, rect.y, rect.width, rect.height);
     }
-    snprintf(buffer + strlen(buffer), sizeof(buffer), "]");
+    g_string_append(response_buffer, "]");
 
-    call_js_callback(web_view, callbackId, buffer);
+    // Discard the GString structure and take ownership of the underlying
+    // cstring memory.
+    char *finished_buffer = g_string_free(response_buffer, FALSE);
+    call_js_callback(web_view, callbackId, finished_buffer);
+    g_free(finished_buffer);
     free(rectangles);
 }
 
