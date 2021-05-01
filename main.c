@@ -348,47 +348,47 @@ bool on_page_load_failed(WebKitWebView *web_view, WebKitLoadEvent load_event,
 }
 
 void printUsage(char *programName) {
-    printf("\
-USAGE: %s <URL> [--help] [--webkit-settings option1=value1,...]\n\
-\n\
-    <URL>\n\
-        Universal Resource Locator to be loaded on the overlay web view.\n\
-        For example, to load a local file, you'd pass something like:\n\
-\n\
-            file:///home/mary/test.html\n\
-\n\
-        or to load from a local web server at port 4000:\n\
-\n\
-            http://localhost:4000\n\
-\n\
-    --inspect\n\
-        Open the Web Inspector (dev tools) on start.\n\
-\n\
-    --webkit-settings <settings>\n\
-        The <settings> should be a comma-separated list of settings.\n\
-\n\
-        Boolean settings can look like\n\
-            option-name\n\
-            option-name=TRUE\n\
-            option-name=FALSE\n\
-\n\
-        String, integer, and enum options look like\n\
-            option-name=foo\n\
-            option-name=42\n\
-\n\
-        To see settings available on your system's WebKit version, their\n\
-        valid values, and default values, pass '--webkit-settings help'.\n\
-\n\
-        To see explanations of the settings, see\n\
-        https://webkitgtk.org/reference/webkit2gtk/stable/WebKitSettings.html\n\
-\n\
-    --help\n\
-        Print this help text, then exit.\n\
-\n\
-    All of the standard GTK debug options and env variables are also\n\
-    supported.  You probably won't need them, but you can find a list here:\n\
-    https://developer.gnome.org/gtk3/stable/gtk-running.html\n\
-\n",
+    printf(
+"USAGE: %s <URL> [--help] [--webkit-settings option1=value1,...]"
+"\n"
+"\n    <URL>"
+"\n        Universal Resource Locator to be loaded on the overlay web view."
+"\n        For example, to load a local file, you'd pass something like:"
+"\n"
+"\n            file:///home/mary/test.html"
+"\n"
+"\n        or to load from a local web server at port 4000:"
+"\n"
+"\n            http://localhost:4000"
+"\n"
+"\n    --inspect"
+"\n        Open the Web Inspector (dev tools) on start."
+"\n"
+"\n    --webkit-settings <settings>"
+"\n        The <settings> should be a comma-separated list of settings."
+"\n"
+"\n        Boolean settings can look like"
+"\n            option-name"
+"\n            option-name=TRUE"
+"\n            option-name=FALSE"
+"\n"
+"\n        String, integer, and enum options look like"
+"\n            option-name=foo"
+"\n            option-name=42"
+"\n"
+"\n        To see settings available on your system's WebKit version, their"
+"\n        valid values, and default values, pass '--webkit-settings help'."
+"\n"
+"\n        To see explanations of the settings, see"
+"\n        https://webkitgtk.org/reference/webkit2gtk/stable/WebKitSettings.html"
+"\n"
+"\n    --help"
+"\n        Print this help text, then exit."
+"\n"
+"\n    All of the standard GTK debug options and env variables are also"
+"\n    supported.  You probably won't need them, but you can find a list here:"
+"\n    https://developer.gnome.org/gtk3/stable/gtk-running.html"
+"\n",
         programName);
 }
 
@@ -793,58 +793,57 @@ next:
     // externally by `call_js_callback`.
     webkit_user_content_manager_add_script(
             manager,
-            webkit_user_script_new("\
-let nextCallbackId = 0\n\
-window.Hudkit = {\n\
-  on: function (eventName, callback) {\n\
-    if (window.Hudkit._listeners.has(eventName)) {\n\
-      window.Hudkit._listeners.get(eventName).push(callback)\n\
-    } else {\n\
-      window.Hudkit._listeners.set(eventName, [callback])\n\
-    }\n\
-  },\n\
-  off: function (eventName, callback) {\n\
-    const listenersForThisEvent = window.Hudkit._listeners.get(eventName)\n\
-    if (listenersForThisEvent) {\n\
-      listenersForThisEvent.splice(listenersForThisEvent.indexOf(callback), 1)\n\
-    }\n\
-  },\n\
-  getMonitorLayout: async function () {\n\
-    return new Promise((resolve, reject) => {\n\
-      const id = nextCallbackId++\n\
-      window.Hudkit._pendingCallbacks[id] = { resolve, reject }\n\
-      window.webkit.messageHandlers.getMonitorLayout.postMessage(id)\n\
-    })\n\
-  },\n\
-  setClickableAreas: async function (rectangles) {\n\
-    return new Promise((resolve, reject) => {\n\
-      const id = nextCallbackId++\n\
-      window.Hudkit._pendingCallbacks[id] = { resolve, reject }\n\
-      window.webkit.messageHandlers.setClickableAreas.postMessage({id, rectangles})\n\
-    })\n\
-  },\n\
-  showInspector: async function (shouldAttachToWindow) {\n\
-    shouldAttachToWindow = shouldAttachToWindow ? true : false\n\
-    return new Promise((resolve, reject) => {\n\
-      const id = nextCallbackId++\n\
-      window.Hudkit._pendingCallbacks[id] = { resolve, reject }\n\
-      window.webkit.messageHandlers.showInspector.postMessage({id, shouldAttachToWindow})\n\
-    })\n\
-  },\n\
-}\n\
-Object.defineProperty(window.Hudkit, '_pendingCallbacks', {\n\
-  value: [],\n\
-  enumerable: false,\n\
-  configurable: false,\n\
-  writable: true,\n\
-})\n\
-Object.defineProperty(window.Hudkit, '_listeners', {\n\
-  value: new Map(),\n\
-  enumerable: false,\n\
-  configurable: false,\n\
-  writable: true,\n\
-})\n\
-                ",
+            webkit_user_script_new(
+"\nlet nextCallbackId = 0"
+"\nwindow.Hudkit = {"
+"\n  on: function (eventName, callback) {"
+"\n    if (window.Hudkit._listeners.has(eventName)) {"
+"\n      window.Hudkit._listeners.get(eventName).push(callback)"
+"\n    } else {"
+"\n      window.Hudkit._listeners.set(eventName, [callback])"
+"\n    }"
+"\n  },"
+"\n  off: function (eventName, callback) {"
+"\n    const listenersForThisEvent = window.Hudkit._listeners.get(eventName)"
+"\n    if (listenersForThisEvent) {"
+"\n      listenersForThisEvent.splice(listenersForThisEvent.indexOf(callback), 1)"
+"\n    }"
+"\n  },"
+"\n  getMonitorLayout: async function () {"
+"\n    return new Promise((resolve, reject) => {"
+"\n      const id = nextCallbackId++"
+"\n      window.Hudkit._pendingCallbacks[id] = { resolve, reject }"
+"\n      window.webkit.messageHandlers.getMonitorLayout.postMessage(id)"
+"\n    })"
+"\n  },"
+"\n  setClickableAreas: async function (rectangles) {"
+"\n    return new Promise((resolve, reject) => {"
+"\n      const id = nextCallbackId++"
+"\n      window.Hudkit._pendingCallbacks[id] = { resolve, reject }"
+"\n      window.webkit.messageHandlers.setClickableAreas.postMessage({id, rectangles})"
+"\n    })"
+"\n  },"
+"\n  showInspector: async function (shouldAttachToWindow) {"
+"\n    shouldAttachToWindow = shouldAttachToWindow ? true : false"
+"\n    return new Promise((resolve, reject) => {"
+"\n      const id = nextCallbackId++"
+"\n      window.Hudkit._pendingCallbacks[id] = { resolve, reject }"
+"\n      window.webkit.messageHandlers.showInspector.postMessage({id, shouldAttachToWindow})"
+"\n    })"
+"\n  },"
+"\n}"
+"\nObject.defineProperty(window.Hudkit, '_pendingCallbacks', {"
+"\n  value: [],"
+"\n  enumerable: false,"
+"\n  configurable: false,"
+"\n  writable: true,"
+"\n})"
+"\nObject.defineProperty(window.Hudkit, '_listeners', {"
+"\n  value: new Map(),"
+"\n  enumerable: false,"
+"\n  configurable: false,"
+"\n  writable: true,"
+"\n})",
                 WEBKIT_USER_CONTENT_INJECT_TOP_FRAME,
                 WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START,
                 NULL, NULL));
