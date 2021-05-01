@@ -278,15 +278,30 @@ void on_inspector_size_allocate(GtkWidget *inspector_web_view,
 
 gulong inspector_size_allocate_handler_id = 0;
 
+void show_attached_inspector_no_keyboard_advice(WebKitWebView *web_view) {
+    webkit_web_view_run_javascript(
+            web_view, "console.info('Note that when the Web Inspector is"
+            " attached to the Hudkit window, you cannot type into it, because"
+            " the overlay window does not receive keyboard events.  To type"
+            " into this console, detach the Inspector into its own window.')",
+            NULL, on_js_call_finished, NULL);
+}
 bool on_inspector_attach(WebKitWebInspector *inspector, gpointer user_data) {
     // When the web inspector attaches to the overlay window, begin tracking
     // its allocated position on screen.
+    WebKitWebView *web_view = (WebKitWebView *) user_data;
 
     WebKitWebViewBase *inspector_web_view = webkit_web_inspector_get_web_view(
             inspector);
     inspector_size_allocate_handler_id =
         g_signal_connect(GTK_WIDGET(inspector_web_view), "size-allocate",
                 G_CALLBACK(on_inspector_size_allocate), NULL);
+
+    static GOnce show_no_keyboard_advice_once = G_ONCE_INIT;
+    g_once(&show_no_keyboard_advice_once,
+            (void * (*)(void *))show_attached_inspector_no_keyboard_advice,
+            web_view);
+
     return FALSE; // Allow attach
 }
 bool on_inspector_detach(WebKitWebInspector *inspector, gpointer user_data) {
@@ -677,7 +692,7 @@ next:
     inspector = webkit_web_view_get_inspector(
             WEBKIT_WEB_VIEW(web_view));
     g_signal_connect(inspector, "attach",
-            G_CALLBACK(on_inspector_attach), NULL);
+            G_CALLBACK(on_inspector_attach), web_view);
     g_signal_connect(inspector, "detach",
             G_CALLBACK(on_inspector_detach), NULL);
 
