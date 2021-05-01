@@ -193,8 +193,7 @@ void on_js_call_get_monitor_layout(WebKitUserContentManager *manager,
                     break;
             }
         }
-        // The buffer was oversized already, and zeroed on allocation, so we
-        // don't have to explicitly write a null byte to terminate it.
+        memset(end_pointer, '\0', 1); // Terminate string
 
         GdkRectangle rect = rectangles[i];
         snprintf(
