@@ -69,6 +69,7 @@ echo '- - -'
 echo "Killing compton"
 kill "$compositor_pid"
 wait "$compositor_pid"
+sleep 2 # Give the 'composited-changed' listener time to fire
 echo "Killing hudkit"
 kill "$hudkit_pid"
 wait "$hudkit_pid"
@@ -125,14 +126,17 @@ else
 fi
 echo '- - -'
 
-echo "Removing temporary files"
-rm "$tmpfile_html"
-rm "$tmpfile_output"
-echo '- - -'
-
 if (( "$exit_code" > 0 )); then
     echo "Some tests failed."
+    echo "Hudkit output:"
+    cat "$tmpfile_output"
 else
     echo "All tests passed.  :)"
 fi
+
+echo '- - -'
+# Remove temporary files
+rm "$tmpfile_html"
+rm "$tmpfile_output"
+
 exit "$exit_code"
