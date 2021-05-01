@@ -124,6 +124,9 @@ void on_js_call_get_monitor_layout(WebKitUserContentManager *manager,
 
     GString *response_buffer = g_string_new("[");
     for (int i = 0; i < nRectangles; ++i) {
+
+        g_string_append(response_buffer, "{name:'");
+
         // Escape the JS string contents escape, to prevent XSS via monitor
         // model string.  Yes, seriously.
         //
@@ -140,9 +143,6 @@ void on_js_call_get_monitor_layout(WebKitUserContentManager *manager,
 
         // Worst-case the escaped output twice as long: if we need to escape
         // every character.  Plus 1 for the terminating \0.
-        char escaped_monitor_model_string[2 * monitor_model_string_length + 1];
-        char *end_pointer = escaped_monitor_model_string;
-
         for (int index = 0; index < monitor_model_string_length; ++index) {
             char charHere = monitor_model_string[index];
             // Spec for JS string literals' parsing grammar:
@@ -160,20 +160,18 @@ void on_js_call_get_monitor_layout(WebKitUserContentManager *manager,
                 // " (double quote)
                 case '"':
                     // Just put a backslash in front of it
-                    memset(end_pointer++, '\\', 1);
-                    memset(end_pointer++, charHere, 1);
+                    g_string_append_c(response_buffer, '\\');
+                    g_string_append_c(response_buffer, charHere);
                     break;
 
                 // Characters excluded because they're part of LineTerminator:
                 // <LF> (line feed)
                 case '\n':
-                    memset(end_pointer++, '\\', 1);
-                    memset(end_pointer++, 'n', 1);
+                    g_string_append(response_buffer, "\\n");
                     break;
                 // <CR> (carriage return)
                 case '\r':
-                    memset(end_pointer++, '\\', 1);
-                    memset(end_pointer++, 'r', 1);
+                    g_string_append(response_buffer, "\\r");
                     break;
                 // <LS> (line separator)
                 // <PS> (paragraph separator)
@@ -189,16 +187,14 @@ void on_js_call_get_monitor_layout(WebKitUserContentManager *manager,
                 // Anything  else is fine in a JavaScript string literal.  Yes,
                 // this even includes other control characters.
                 default:
-                    memset(end_pointer++, charHere, 1);
+                    g_string_append_c(response_buffer, charHere);
                     break;
             }
         }
-        memset(end_pointer, '\0', 1); // Terminate string
 
         GdkRectangle rect = rectangles[i];
         g_string_append_printf(response_buffer,
-                "{name:'%s',x:%i,y:%i,width:%i,height:%i},",
-                escaped_monitor_model_string,
+                "',x:%i,y:%i,width:%i,height:%i},",
                 rect.x, rect.y, rect.width, rect.height);
     }
     g_string_append(response_buffer, "]");
