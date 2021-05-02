@@ -741,6 +741,8 @@ next:
     // but otherwise leave it alone.
     gtk_window_set_keep_above       (GTK_WINDOW(window), true);
     gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), true);
+    gtk_window_set_skip_pager_hint  (GTK_WINDOW(window), true);
+    gtk_window_set_focus_on_map     (GTK_WINDOW(window), false);
     gtk_window_set_accept_focus     (GTK_WINDOW(window), true);
     gtk_window_set_decorated        (GTK_WINDOW(window), false);
     gtk_window_set_resizable        (GTK_WINDOW(window), false);
