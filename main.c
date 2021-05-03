@@ -49,8 +49,7 @@ static int get_monitor_rects(GdkDisplay *display, GdkRectangle **rectangles) {
 // user code modifies the other rectangles, the inspector's rectangle can't be
 // overwritten.
 cairo_rectangle_int_t attached_inspector_input_rect = { 0, 0, 0, 0 };
-cairo_rectangle_int_t *user_defined_input_rects = NULL;
-int n_user_defined_input_rects = 0;
+GArray *user_defined_input_rects;
 
 void realize_input_shape() {
     // Our input shape for the overall window should be the rectangles set by
@@ -59,8 +58,12 @@ void realize_input_shape() {
 
     cairo_region_t *shape = cairo_region_create_rectangle(
             &attached_inspector_input_rect);
-    for (int i = 0; i < n_user_defined_input_rects; ++i) {
-        cairo_region_union_rectangle(shape, &user_defined_input_rects[i]);
+    for (int i = 0; i < user_defined_input_rects->len; ++i) {
+        cairo_rectangle_int_t rect = g_array_index(
+                    user_defined_input_rects,
+                    cairo_rectangle_int_t,
+                    i);
+        cairo_region_union_rectangle(shape, &rect);
     }
 
     GdkWindow *gdk_window = gtk_widget_get_window(GTK_WIDGET(window));
@@ -220,21 +223,22 @@ void on_js_call_set_clickable_areas(WebKitUserContentManager *manager,
                 "length"));
     //printf("nRectangles %i\n", nRectangles);
 
-    n_user_defined_input_rects = nRectangles;
-    user_defined_input_rects = realloc(
-            user_defined_input_rects, nRectangles * sizeof(GdkRectangle));
+    g_array_set_size(user_defined_input_rects, nRectangles);
 
     JSCValue *jsRectangles = jsc_value_object_get_property(jsValue, "rectangles");
-    for (int i = 0; i < nRectangles; ++i) {
+    for (int i = 0; i < user_defined_input_rects->len; ++i) {
         JSCValue *jsRect = jsc_value_object_get_property_at_index(jsRectangles, i);
+        cairo_rectangle_int_t *rect = &g_array_index(
+                user_defined_input_rects, GdkRectangle, i);
+
         // Anything undefined is interpreted by `jsc_value_to_int32` as 0.
-        user_defined_input_rects[i].x = jsc_value_to_int32(
-                jsc_value_object_get_property(jsRect, "x"));
-        user_defined_input_rects[i].y = jsc_value_to_int32(
-                jsc_value_object_get_property(jsRect, "y"));
-        user_defined_input_rects[i].width = jsc_value_to_int32(
-                jsc_value_object_get_property(jsRect, "width"));
-        user_defined_input_rects[i].height = jsc_value_to_int32(
+        rect->x = jsc_value_to_int32(
+                 jsc_value_object_get_property(jsRect, "x"));
+        rect->y = jsc_value_to_int32(
+                 jsc_value_object_get_property(jsRect, "y"));
+        rect->width = jsc_value_to_int32(
+                 jsc_value_object_get_property(jsRect, "width"));
+        rect->height = jsc_value_to_int32(
                 jsc_value_object_get_property(jsRect, "height"));
     }
 
@@ -639,6 +643,12 @@ next:
         exit(2);
     }
 
+    // Initialise the array of user-JS-defined clickable areas to empty
+    user_defined_input_rects = g_array_new(
+            FALSE, // don't NULL-terminate
+            TRUE,  // zero memory
+            sizeof(cairo_rectangle_int_t));
+
     //
     // Create the window
     //
@@ -893,8 +903,7 @@ static void size_to_screen(GtkWindow *window) {
 
     // Remove the user-defined input shape, since it's certainly in completely
     // the wrong position now.
-    n_user_defined_input_rects = 0;
-    user_defined_input_rects = realloc(user_defined_input_rects, 0);
+    g_array_set_size(user_defined_input_rects, 0);
     realize_input_shape();
 }
 
