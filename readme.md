@@ -325,6 +325,16 @@ WebKit developers](https://github.com/whatwg/html/pull/4352), and
 [implementation is in
 progress](https://bugs.webkit.org/show_bug.cgi?id=202484).
 
+> Why is Xvfb complaining about _extension "GLX" missing on display ":99"_ if I
+> run the automated test?
+
+Probably because you're running an Nvidia proprietary driver which are [kind of
+garbage](https://www.youtube.com/watch?v=_36yNWw_07g).  The test starts a
+background instance of X11 so your desktop's settings don't interfere with it,
+but inside that context OpenGL is randomly bricked on some versions of the
+proprietary NV driver, and on some versions it works.  The actual program
+should work just fine either way though.  Try the `example/`.
+
 ## Related programs
 
 - [Electron][electron].  I've heard it's possible to make Electron
