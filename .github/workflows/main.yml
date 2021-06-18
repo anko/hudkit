@@ -8,6 +8,10 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+  schedule:
+      # At 12:00 on the 10th day of every month
+      - cron: '00 12 10 * *'
+
 jobs:
   build:
     runs-on: ubuntu-latest
