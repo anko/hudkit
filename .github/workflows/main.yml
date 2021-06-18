@@ -1,4 +1,4 @@
-name: Automated build and test
+name: CI
 
 on:
   # Trigger on push and pull-request events, on any branch
