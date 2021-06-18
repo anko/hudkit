@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  # Trigger on push and pull-request events, on any branch
+  push:
+  pull_request:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+  schedule:
+      # At 12:00 on the 10th day of every month
+      - cron: '00 12 10 * *'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: install build dependencies
+        run: sudo apt-get install libwebkit2gtk-4.0-dev libgtk-3-dev
+
+      - name: make
+        run: make
+
+      - name: install test dependencies
+        run: |
+          # virtual X11 framebuffer
+          sudo apt-get install xvfb
+          # compositor
+          sudo apt-get install compton
+          # root window background setter
+          sudo apt-get install hsetroot
+          # xwd: for taking a screenshot
+          sudo apt-get install x11-apps
+          # convert: for converting screenshot image format
+          sudo apt-get install imagemagick
+
+      - name: test
+        run: ./test.sh
