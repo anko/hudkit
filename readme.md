@@ -33,8 +33,13 @@ cd example
 
 If `make` complains, check [dependencies](#dependencies).
 
-The [`example/` directory](example/) contains various inspirations and starting
-points.  If you come up with any of your own (fairly compact) example ideas,
+You should see something like this, if you have 2 monitors:
+
+![hudkit example running on 2 monitors](https://user-images.githubusercontent.com/5231746/132109661-34cde61f-f1bf-49d1-ac0a-02af9993e94e.png)
+
+The code for what you see there is in the [`example/` directory](example/).  It
+contains some explanatory comments, so it might make a good starting point for
+your experiments.  If you come up with a (fairly compact) example of your own,
 please PR.
 
 ## Usage
