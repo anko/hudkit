@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE
 // Library include           // What it's used for
 // --------------------------//-------------------
 #include <gtk/gtk.h>         // windowing
@@ -8,6 +9,7 @@
 #include <stdio.h>           // files
 #include <inttypes.h>        // string to int conversion
 #include <signal.h>          // handling SIGUSR1
+#include <string.h>          // string parsing for --webkit-settings
 
 // Overlay window handle.  Global because almost everything touches it.
 GtkWidget *window;
