@@ -1,4 +1,4 @@
-# Hudkit&ensp;[![](https://img.shields.io/github/workflow/status/anko/hudkit/CI/master?style=flat-square)](https://github.com/anko/hudkit/actions/workflows/ci.yml) ![](https://img.shields.io/badge/coolness-maximum-brightgreen.svg?style=flat-square)
+# Hudkit&ensp;[![](https://img.shields.io/github/actions/workflow/status/anko/hudkit/ci.yml?style=flat-square)](https://github.com/anko/hudkit/actions/workflows/ci.yml) ![](https://img.shields.io/badge/coolness-maximum-brightgreen.svg?style=flat-square)
 
 Transparent click-through web browser overlay ("[HUD][wiki-hud]") over your
 whole desktop, using [WebKit][webkit].
