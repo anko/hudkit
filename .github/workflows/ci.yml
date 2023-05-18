@@ -18,6 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: update APT package sources
+        run: sudo apt-get update
+
       - name: install build dependencies
         run: sudo apt-get install libwebkit2gtk-4.0-dev libgtk-3-dev
 
