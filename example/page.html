@@ -26,6 +26,7 @@
 <body>
     <div id="monitor-frame-container"></div>
     <div id="explanation">
+    <input></input>
     <h1><span>Welcome to the future!</span></h1>
     <p><span>You should be able to—
         <ul>
@@ -41,6 +42,11 @@
     <p><span><strong>Otherwise</strong>, enjoy!</span></p>
     </div>
     <script>
+
+        const html = document.getElementsByTagName('html')[0]
+        document.addEventListener('keydown', e => console.log(e.code))
+        window.onfocus = () => console.log("focused")
+        window.onblur = () => console.log("blurred")
 
         // Async wrapper necessary so we can use `await`
         ;(async () => {

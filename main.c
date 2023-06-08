@@ -394,6 +394,48 @@ void printUsage(char *programName) {
         programName);
 }
 
+// Listen for the "pointer entered window" and "pointer left window" events,
+// and in response grab or ungrab the keyboard device.
+//
+// This is necessary because our overlay window has the override_redirect flag
+// set, meaning while it can get pointer events, the desktop environment will
+// never give it keyboard events.  It can however *grab the keyboard device*
+// itself, effectively taking keyboard input focus instead of being given it.
+// So we do that.
+struct PointerEnterEventData {
+    GdkSeat *seat;
+    GdkWindow *window;
+};
+gboolean on_pointer_enter_window(
+        GtkWidget *widget, GdkEventCrossing *event, gpointer user_data) {
+    struct PointerEnterEventData *data =
+        (struct PointerEnterEventData *) user_data;
+    printf("Pointer entered window.  Grabbing.\n");
+    gdk_seat_grab(data->seat, data->window,
+            // Grab the keyboard only we already get pointer events.
+            GDK_SEAT_CAPABILITY_KEYBOARD,
+            FALSE, // owner events
+            NULL,  // cursor
+            // event that triggered the grab: Internally, gdk_seat_grab uses
+            // XIGrabDevice, which reads the event's timestamp.  The grab
+            // request is cancelled if the given event happened before the last
+            // device grab.  This makes stuff happen in the expected order when
+            // under heavy system load, where events may be handled with
+            // significant delay.
+            (GdkEvent *) event,
+            NULL,  // prepare func (don't need it; window is visible already)
+            NULL   // user_data passed to prepare func
+            );
+    return FALSE;
+}
+gboolean on_pointer_leave_window(
+        GtkWidget *widget, GdkEventCrossing *event, gpointer user_data) {
+    GdkSeat *seat = (GdkSeat *) user_data;
+    printf("Pointer left window.  Releasing grab.\n");
+    gdk_seat_ungrab(seat);
+    return FALSE;
+}
+
 int main(int argc, char **argv) {
 
     gtk_init(&argc, &argv);
@@ -663,6 +705,22 @@ next:
     g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
     gtk_widget_set_app_paintable(window, TRUE);
 
+    // Listen for enter and leave notify events.
+    //
+    // These are fired when the mouse pointer enters the overlay window.  They
+    // won't fire by default (because it has no input-area), but will fire if
+    // JS has called `Hudkit.setClickableAreas`, and the mouse pointer enters
+    // one of those areas.
+    GdkDisplay *display = gdk_display_get_default();
+    GdkSeat *seat = gdk_display_get_default_seat(display);
+    gtk_widget_set_events(window,
+            GDK_ENTER_NOTIFY_MASK & GDK_LEAVE_NOTIFY_MASK);
+    struct PointerEnterEventData pointer_enter_event_data = { seat };
+    g_signal_connect (window, "enter-notify-event",
+            G_CALLBACK(on_pointer_enter_window), &pointer_enter_event_data);
+    g_signal_connect (window, "leave-notify-event",
+            G_CALLBACK(on_pointer_leave_window), seat);
+
     //
     // Set up the WebKit web view widget
     //
@@ -731,7 +789,6 @@ next:
     // it correctly.
     screen_changed(window, NULL, web_view);
 
-    GdkDisplay *display = gdk_display_get_default();
     GdkRectangle *rectangles = NULL;
     int nRectangles = get_monitor_rects(display, &rectangles);
 
@@ -740,6 +797,7 @@ next:
     // Hide the window, so we can get our properties ready without the window
     // manager trying to mess with us.
     GdkWindow *gdk_window = gtk_widget_get_window(GTK_WIDGET(window));
+    pointer_enter_event_data.window = gdk_window;
     gdk_window_hide(GDK_WINDOW(gdk_window));
 
     // "Can't touch this!" - to the window manager
