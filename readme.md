@@ -16,9 +16,7 @@ using a fullscreen transparent web view for.
  - Small executable.  Uses native GTK and WebKit libraries.
  - Supports modern web APIs like WebSockets, WebAudio, WebGL, etc.
 
-Platforms: &emsp;:heavy\_check\_mark: Linux (X11) &emsp;:no\_entry\_sign:
-~~Linux (Wayland)~~ &emsp;:no\_entry\_sign: ~~Windows~~ &emsp;:no\_entry\_sign:
-~~OS X~~ (but see https://github.com/progrium/topframe!)
+Platforms: &emsp; ✔️ Linux (X11)&emsp;🚫 [~~Linux (Wayland)~~](https://github.com/anko/hudkit/issues/20) &emsp;🚫 [~~Windows~~](https://github.com/anko/hudkit/issues/19) &emsp;🚫 [~~OS X~~](https://github.com/progrium/topframe)
 
 ## Quick start
 
@@ -27,8 +25,7 @@ cd /tmp
 git clone https://github.com/anko/hudkit.git
 cd hudkit
 make
-cd example
-./run.sh
+./example/run.sh
 ```
 
 If `make` complains, check [dependencies](#dependencies).
@@ -41,6 +38,8 @@ The code for what you see there is in the [`example/` directory](example/).  It
 contains some explanatory comments, so it might make a good starting point for
 your experiments.  If you come up with a (fairly compact) example of your own,
 please PR.
+
+To open Web Inspector targeting the example page, `./example/run.sh --inspect`.
 
 ## Usage
 
