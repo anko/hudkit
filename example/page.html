@@ -5,15 +5,15 @@
         content="default-src 'self' 'unsafe-inline'">
     <style>
         h1, p, li { color : white; }
-        span { background : rgba(0,0,0,0.8); }
         span.ifnot { background : rgba(100,0,0,0.8); }
         div#explanation {
+            background: rgba(0,0,0,0.7);
             position: absolute;
             padding: 2em;
             width: 30em;
         }
         .monitor-frame {
-            background: radial-gradient(#0000ff22, #0000ff99);
+            background: radial-gradient(#0000ff11, #0000ff33);
             position: absolute;
             border: 10px solid red;
             box-sizing: border-box;
@@ -26,29 +26,59 @@
 <body>
     <div id="monitor-frame-container"></div>
     <div id="explanation">
-    <h1><span>Welcome to the future!</span></h1>
-    <p><span>You should be able to—
+    <h1>Welcome to the future!</h1>
+    <p>You should be able to—
         <ul>
-            <li><span><strong>see your desktop</strong> through
-                    <strong>translucent blue</strong>,</span></li>
-            <li><span><strong>click on stuff normally</strong> (through this
-                    overlay), and</span></li>
-            <li><span>see each monitor <strong>correctly outlined</strong> and
-                    labelled with its device name.</span></li>
+            <li><strong>see your desktop</strong> through <strong>translucent
+                    blue</strong>,</li>
+            <li>see each monitor <strong>correctly outlined</strong> and
+                labelled with its device name, and</li>
+            <li><strong>click on stuff normally</strong> through this overlay;
+                except inside this magic red square, inside which clicks hit
+                the overlay window and make the text in it change between
+                upper- and lower-case:
+                <br />
+                <svg width="4em" height="4em" id="magic-square"
+                            cursor="pointer">
+                    <rect stroke="rgba(255,0,0,1)" fill="rgba(255,0,0,0.1)"
+                                                   stroke-width="5%"
+                    width="100%" height="100%"/>
+                    <text fill="red" x="10%" y="50%" textLength="80%"
+                                                     dominant-baseline="middle"
+                                                     pointer-events="none">magic</text>
+                </svg>
+            </li>
         </ul>
     <p><span class='ifnot'><strong>If not</strong>, create an issue at
         <em>https://github.com/anko/hudkit/issues</em>.</span></p>
-    <p><span><strong>Otherwise</strong>, enjoy!</span></p>
+
+    <p>
+    Detected monitors:
+    <ol id="monitor-list">
+        <!-- Filled in by JavaScript -->
+    </ol>
+    </p>
     </div>
     <script>
 
         // Async wrapper necessary so we can use `await`
         ;(async () => {
-            // Make the overlay window clickable in a 100-pixel-wide strip at
-            // the left of your leftmost monitor.
+            // Make the magic square clickable.
+            let square = document.getElementById('magic-square')
+            let squareBounds = square.getBoundingClientRect()
             await Hudkit.setClickableAreas([
-                { x: 0, y: 0, width: 100, height: 1200 }
+                {x: squareBounds.x, y: squareBounds.y, width:
+                    squareBounds.width, height: squareBounds.height}
             ])
+
+            // Clicks flip its text between uppercase and lowercase.
+            let state = true
+            square.addEventListener("click", e => {
+                let text = square.getElementsByTagName("text")[0]
+                text.textContent = state ? text.textContent.toUpperCase() :
+                    text.textContent.toLowerCase()
+                state = !state
+            })
 
             async function showMonitorFrames() {
                 // At the location of each monitor, show obvious blue frames
@@ -63,6 +93,14 @@
                 const monitors = await Hudkit.getMonitorLayout()
 
                 console.log(JSON.stringify(monitors, null, 2))
+
+                const monitorList =
+                    document.getElementById('monitor-list')
+                for (const {name, x, y, width, height} of monitors) {
+                    const item = document.createElement('li')
+                    item.textContent = `"${name}": position (${x},${y}), size ${width}×${height}`
+                    monitorList.appendChild(item)
+                }
 
                 monitors.forEach((monitor, monitorIndex) => {
 
