@@ -65,11 +65,7 @@
         ;(async () => {
             // Make the magic square clickable.
             let square = document.getElementById('magic-square')
-            let squareBounds = square.getBoundingClientRect()
-            await Hudkit.setClickableAreas([
-                {x: squareBounds.x, y: squareBounds.y, width:
-                    squareBounds.width, height: squareBounds.height}
-            ])
+            await Hudkit.setClickableAreas([ square.getBoundingClientRect() ])
 
             // Clicks flip its text between uppercase and lowercase.
             let state = true
