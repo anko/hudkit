@@ -76,18 +76,16 @@ void realize_input_shape() {
 
 static void on_js_call_finished(GObject *object, GAsyncResult *result,
         gpointer user_data) {
-    WebKitJavascriptResult *js_result;
-    JSValueRef value;
-    JSGlobalContextRef context;
+    JSCValue *value;
     GError *error = NULL;
 
-    js_result = webkit_web_view_run_javascript_finish(WEBKIT_WEB_VIEW(object), result, &error);
-    if (!js_result) {
+    value = webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(object), result, &error);
+    if (!value) {
         g_warning("Error running JavaScript: %s", error->message);
         g_error_free(error);
         return;
     }
-    webkit_javascript_result_unref(js_result);
+    g_object_unref(value);
 }
 
 void call_js_callback(WebKitWebView *web_view, int callbackId, char *stringifiedData) {
@@ -104,8 +102,16 @@ void call_js_callback(WebKitWebView *web_view, int callbackId, char *stringified
             callbackId, stringifiedData, callbackId);
 
     char *finished_buffer = g_string_free(response_buffer, FALSE);
-    webkit_web_view_run_javascript(
-            web_view, finished_buffer, NULL, on_js_call_finished, NULL);
+    webkit_web_view_evaluate_javascript(
+        web_view,
+        finished_buffer,
+        -1, // `length` (-1 indicates a NULL-terminated string)
+        NULL, // `world_name` (NULL indicates default)
+        NULL, // `source_uri` (NULL indicates there's no associated file)
+        NULL, // `cancellable` (NULL indicates we don't care)
+        on_js_call_finished, // callback
+        NULL // `user_data`
+    );
     g_free(finished_buffer);
 }
 
@@ -283,12 +289,19 @@ void on_inspector_size_allocate(GtkWidget *inspector_web_view,
 gulong inspector_size_allocate_handler_id = 0;
 
 void show_attached_inspector_no_keyboard_advice(WebKitWebView *web_view) {
-    webkit_web_view_run_javascript(
-            web_view, "console.info('Note that when the Web Inspector is"
+    webkit_web_view_evaluate_javascript(
+        web_view,
+        "console.info('Note that when the Web Inspector is"
             " attached to the Hudkit window, you cannot type into it, because"
             " the overlay window does not receive keyboard events.  To type"
             " into this console, detach the Inspector into its own window.')",
-            NULL, on_js_call_finished, NULL);
+        -1, // `length` (-1 indicates a NULL-terminated string)
+        NULL, // `world_name` (NULL indicates default)
+        NULL, // `source_uri` (NULL indicates there's no associated file)
+        NULL, // `cancellable` (NULL indicates we don't care)
+        on_js_call_finished, // callback
+        NULL // `user_data`
+    );
 }
 bool on_inspector_attach(WebKitWebInspector *inspector, gpointer user_data) {
     // When the web inspector attaches to the overlay window, begin tracking
@@ -678,7 +691,8 @@ next:
     g_signal_connect(window, "screen-changed",
             G_CALLBACK(screen_changed), web_view);
     // Set up a callback to react to screen compositing changes
-    g_signal_connect(window, "composited-changed",
+    GdkScreen *screen = gtk_widget_get_screen(GTK_WIDGET(window));
+    g_signal_connect(screen, "composited-changed",
             G_CALLBACK(composited_changed), web_view);
 
     // Set up a callback to react to window.close() being called from JS within
@@ -931,8 +945,16 @@ void call_js_listeners(WebKitWebView *web_view, char *eventName, char *stringifi
 
     char *finished_buffer = g_string_free(response_buffer, FALSE);
     printf("%s\n", finished_buffer);
-    webkit_web_view_run_javascript(
-            web_view, finished_buffer, NULL, on_js_call_finished, NULL);
+    webkit_web_view_evaluate_javascript(
+        web_view,
+        finished_buffer,
+        -1, // `length` (-1 indicates a NULL-terminated string)
+        NULL, // `world_name` (NULL indicates default)
+        NULL, // `source_uri` (NULL indicates there's no associated file)
+        NULL, // `cancellable` (NULL indicates we don't care)
+        on_js_call_finished, // callback
+        NULL // `user_data`
+    );
     g_free(finished_buffer);
 }
 
