@@ -34,6 +34,7 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen,
 static void composited_changed(GdkScreen *screen, gpointer user_data);
 static void on_close_web_view(WebKitWebView *web_view, gpointer user_data);
 
+static void size_to_screen(GtkWindow *window);
 static int get_monitor_rects(GdkDisplay *display, GdkRectangle **rectangles) {
     int n = gdk_display_get_n_monitors(display);
     GdkRectangle *new_rectangles = (GdkRectangle*)malloc(n * sizeof(GdkRectangle));
@@ -783,6 +784,15 @@ next:
     // Now it's safe to show the window again.  It should be click-through, and
     // the WM should ignore it.
     gdk_window_show(GDK_WINDOW(gdk_window));
+
+    // Move window to match monitor layout.  This should already have been done
+    // by `screen_changed` above, but we repeat it here after
+    // `gdk_window_show`, in case the running window manager applies its own
+    // overriding rules for initial window positioning when a window becomes
+    // visible.  This could cause a few frames of the wrong window position
+    // being shown on affected window managers, but should do nothing on window
+    // managers that behave properly.
+    size_to_screen(GTK_WINDOW(window));
 
     //
     // Set up the JavaScript API
