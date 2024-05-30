@@ -16,7 +16,7 @@ using a fullscreen transparent web view for.
  - Small executable.  Uses native GTK and WebKit libraries.
  - Supports modern web APIs like WebSockets, WebAudio, WebGL, etc.
 
-Platforms: &emsp; ✔️ Linux (X11)&emsp;🚫 [~~Linux (Wayland)~~](https://github.com/anko/hudkit/issues/20) &emsp;🚫 [~~Windows~~](https://github.com/anko/hudkit/issues/19) &emsp;🚫 [~~OS X~~](https://github.com/progrium/topframe)
+Platforms: &emsp;✔️ Linux (X11)&emsp;✔️❔ [Linux (Wayland)](https://github.com/anko/hudkit/issues/20) &emsp;🚫 [~~Windows~~](https://github.com/anko/hudkit/issues/19) &emsp;🚫 [~~OS X~~](https://github.com/progrium/topframe)
 
 ## Quick start
 
